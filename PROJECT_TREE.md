@@ -1,0 +1,119 @@
+# Project tree for workspace
+
+This file was generated to show the current directory structure for the repository/workspace.
+
+```
+INTEGRATION_SUMMARY.md
+package.json
+README.md
+client/
+    cheaptripfe/
+        babel.config.js
+        Dockerfile
+        jsconfig.json
+        package.json
+        README.md
+        vue.config.js
+        public/
+            index.html
+            img/
+                articles/
+                images/
+        src/
+            App.vue
+            main.js
+            assets/
+            components/
+                FooterComponent.vue
+                HeaderComponent.vue
+                HelloWorld.vue
+                TourCard.vue
+            routes/
+                index.js
+            utils/
+                eventBus.js
+                validate.js
+            views/
+                BookingView.vue
+                HomeView.vue
+                SearchResults.vue
+                SignInView.vue
+                SignUpView.vue
+                TourDetailsView.vue
+                TourTheoDoan.vue
+                TourThuong.vue
+                UserInfoView.vue
+                Articles/
+                    ChinhSach.vue
+                    GioiThieu.vue
+                    HomePage.vue
+                    HotNews.vue
+                    data/
+                        news.js
+server/
+    api-gateway/
+        package.json
+        src/
+            index.js
+            middleware/
+                loggerMid.js
+            routes/
+                authProxy.js
+                bookingProxy.js
+                discountsProxy.js
+                proxyRoutes.js
+                ratingProxy.js
+                toursProxy.js
+    auth-service/
+        index.js
+        package.json
+        controllers/
+            authController.js
+        models/
+            authModel.js
+        routes/
+            authRoute.js
+    booking-service/
+        index.js
+        package.json
+        start-all-services.js
+        controllers/
+            bookingController.js
+        models/
+            billModel.js
+            bookingModel.js
+        routes/
+            bookingRoute.js
+    discounts-service/
+        index.js
+        package.json
+        controllers/
+            discountController.js
+        models/
+            discountModel.js
+        routes/
+            discountRoute.js
+    rating-service/
+        index.js
+        package.json
+        controllers/
+            rateTourController.js
+        models/
+            rateTourModel.js
+        routes/
+            rateTourRoute.js
+    tours-service/
+        index.js
+        package.json
+        updateDestination.js
+        controllers/
+            tourController.js
+        models/
+            tourModel.js
+        routes/
+            tourRoute.js
+```
+
+Notes:
+- `client/cheaptripfe/public/img/` is the recommended place for static images served at runtime as `/img/...`.
+- If you want me to actually create a new directory scaffold (make folders and placeholder files), tell me what structure to create and I will create it on disk.

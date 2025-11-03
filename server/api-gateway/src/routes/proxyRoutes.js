@@ -6,11 +6,13 @@ const authProxy = require('./authProxy');
  const bookingProxy = require('./bookingProxy'); // Đã mount ở index.js, không cần ở đây
 const discountsProxy = require('./discountsProxy');
 const ratingProxy = require('./ratingProxy');
+const documentsProxy = require('./documentsProxy');
 
 router.use('/auth', authProxy);         // ✅ Dùng biến đã require
 router.use('/tours', toursProxy);
 router.use('/bookings', bookingProxy); // Đã mount ở index.js, không cần ở đây
 router.use('/discounts', discountsProxy);
 router.use('/rating', ratingProxy);
+router.use('/documents', documentsProxy); // ✅ Documents service proxy
 
 module.exports = router;

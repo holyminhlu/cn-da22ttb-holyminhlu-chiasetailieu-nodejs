@@ -233,3 +233,5 @@ curl -X POST http://localhost:3001/register \
 Với logging mới này, chúng ta sẽ thấy **chính xác** request đi đến đâu và dừng ở đâu!
 
 
+
+

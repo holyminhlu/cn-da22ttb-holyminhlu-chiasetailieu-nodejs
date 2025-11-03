@@ -93,4 +93,29 @@ router.get('/login', (req, res) => {
 router.get('/customer', getCustomerByEmail);
 router.post('/customer/update', updateCustomerInfo);
 
+// Upload cover image route
+let uploadCoverImage, uploadCoverMiddleware;
+try {
+    const controllers = require('../controllers/authController');
+    uploadCoverImage = controllers.uploadCoverImage;
+    uploadCoverMiddleware = controllers.uploadCoverMiddleware;
+    console.log('✅ Upload cover controller loaded successfully');
+    
+    // Định nghĩa route upload cover
+    router.post('/profile/cover', 
+        logRoute('POST /profile/cover'), 
+        uploadCoverMiddleware, 
+        asyncHandler(uploadCoverImage, 'POST /profile/cover')
+    );
+} catch (error) {
+    console.error('❌ Error loading upload cover controller:', error);
+    // Định nghĩa route error handler nếu controller không load được
+    router.post('/profile/cover', (req, res) => {
+        res.status(500).json({
+            success: false,
+            message: 'Upload cover service không khả dụng. Vui lòng kiểm tra server logs.'
+        });
+    });
+}
+
 module.exports = router;

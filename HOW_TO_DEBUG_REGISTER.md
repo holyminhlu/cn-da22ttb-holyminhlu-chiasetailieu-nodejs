@@ -262,3 +262,5 @@ Script sẽ **tự động xác định** lỗi và đưa ra hướng dẫn fix!
 **Xem chi tiết:** `DEBUG_REGISTER_GUIDE.md`
 
 
+
+

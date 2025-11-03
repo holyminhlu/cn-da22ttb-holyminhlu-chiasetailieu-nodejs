@@ -62,6 +62,10 @@ const accountSchema = new mongoose.Schema({
         type: String,
         default: '/img/default-avatar.png'
     },
+    cover_url: {
+        type: String,
+        default: ''
+    },
     bio: {
         type: String,
         maxlength: [500, 'Tiểu sử không quá 500 ký tự'],

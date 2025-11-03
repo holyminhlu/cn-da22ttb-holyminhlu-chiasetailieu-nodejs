@@ -2,9 +2,54 @@ const User = require('../models/authModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'eduShare_secret_key_2024';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+// Đảm bảo thư mục uploads tồn tại
+const uploadsDir = path.join(__dirname, '../uploads');
+const coversDir = path.join(uploadsDir, 'covers');
+
+[uploadsDir, coversDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`✅ Created directory: ${dir}`);
+    }
+});
+
+// Cấu hình multer cho cover image
+const coverStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, coversDir);
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const uuid = uuidv4().replace(/-/g, '');
+        const ext = path.extname(file.originalname);
+        const fileName = `cover_${timestamp}_${uuid}${ext}`;
+        cb(null, fileName);
+    }
+});
+
+const coverFileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Cover image phải là file hình ảnh'), false);
+    }
+};
+
+const uploadCover = multer({
+    storage: coverStorage,
+    fileFilter: coverFileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+    }
+});
 
 /**
  * Đăng ký tài khoản mới
@@ -330,6 +375,7 @@ exports.getCustomerByEmail = async (req, res) => {
                 address: user.address || '',
                 gender: user.gender || '',
                 avatar_url: user.avatar_url,
+                cover_url: user.cover_url || '',
                 bio: user.bio,
                 role: user.role,
                 university: user.university,
@@ -389,3 +435,100 @@ exports.verifyEmail = async (req, res) => {
         res.status(400).send('Token không hợp lệ hoặc đã hết hạn.');
     }
 };
+
+/**
+ * Upload cover image
+ * POST /api/auth/profile/cover
+ */
+exports.uploadCoverImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn file ảnh bìa'
+            });
+        }
+
+        const { email } = req.body;
+        if (!email) {
+            // Xóa file nếu email không có
+            if (req.file.path) {
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (e) {
+                    console.error('Error deleting file:', e);
+                }
+            }
+            return res.status(400).json({
+                success: false,
+                message: 'Email là bắt buộc'
+            });
+        }
+
+        // Tìm user
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            // Xóa file nếu user không tồn tại
+            if (req.file.path) {
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (e) {
+                    console.error('Error deleting file:', e);
+                }
+            }
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy người dùng'
+            });
+        }
+
+        // Xóa ảnh bìa cũ nếu có
+        if (user.cover_url) {
+            // Xử lý cả relative path và absolute URL
+            let oldCoverPath = user.cover_url;
+            if (oldCoverPath.startsWith('http://')) {
+                oldCoverPath = oldCoverPath.replace('http://localhost:3001', '');
+            }
+            oldCoverPath = path.join(__dirname, '..', oldCoverPath);
+            if (fs.existsSync(oldCoverPath)) {
+                try {
+                    fs.unlinkSync(oldCoverPath);
+                    console.log('✅ Deleted old cover image:', oldCoverPath);
+                } catch (e) {
+                    console.error('Error deleting old cover:', e);
+                }
+            }
+        }
+
+        // Cập nhật cover_url
+        const coverUrl = `/uploads/covers/${req.file.filename}`;
+        user.cover_url = coverUrl;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Upload ảnh bìa thành công',
+            data: {
+                cover_url: `http://localhost:3001${coverUrl}`
+            }
+        });
+    } catch (error) {
+        console.error('Error uploading cover:', error);
+        // Xóa file nếu có lỗi
+        if (req.file && req.file.path) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (e) {
+                console.error('Error deleting file:', e);
+            }
+        }
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi upload ảnh bìa',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Export multer middleware
+exports.uploadCoverMiddleware = uploadCover.single('cover');

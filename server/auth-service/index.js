@@ -9,7 +9,19 @@ const app = express();
 const PORT = 3001;
 
 app.use(cors());
-app.use(express.json());
+
+// Chỉ parse JSON khi không phải multipart/form-data
+app.use((req, res, next) => {
+    if (req.headers['content-type']?.includes('multipart/form-data')) {
+        // Skip JSON parsing for multipart/form-data - multer sẽ xử lý
+        console.log('📦 Skipping JSON parsing for multipart/form-data');
+        next();
+    } else {
+        express.json()(req, res, next);
+    }
+});
+
+app.use(express.urlencoded({ extended: true }));
 
 // Middleware để log tất cả requests
 app.use((req, res, next) => {
@@ -72,6 +84,9 @@ app.get('/test', (req, res) => {
         }
     });
 });
+
+// Serve static files for covers
+app.use('/uploads', express.static('uploads'));
 
 app.use('/', require('./routes/authRoute'));
 

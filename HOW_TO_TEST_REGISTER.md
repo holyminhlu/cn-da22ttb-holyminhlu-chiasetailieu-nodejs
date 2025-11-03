@@ -204,3 +204,5 @@ curl -X POST http://localhost:3001/register \
 Lệnh này sẽ tự động tạo email unique và test đăng ký!
 
 
+
+

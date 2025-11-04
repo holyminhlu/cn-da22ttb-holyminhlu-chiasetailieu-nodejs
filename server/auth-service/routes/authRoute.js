@@ -93,6 +93,7 @@ router.get('/login', (req, res) => {
 router.get('/customer', getCustomerByEmail);
 router.post('/customer/update', updateCustomerInfo);
 
+// Upload routes - phải đặt trước các routes khác để tránh conflict
 // Upload cover image route
 let uploadCoverImage, uploadCoverMiddleware;
 try {
@@ -114,6 +115,36 @@ try {
         res.status(500).json({
             success: false,
             message: 'Upload cover service không khả dụng. Vui lòng kiểm tra server logs.'
+        });
+    });
+}
+
+// Upload avatar image route
+let uploadAvatarImage, uploadAvatarMiddleware;
+try {
+    const controllers = require('../controllers/authController');
+    uploadAvatarImage = controllers.uploadAvatarImage;
+    uploadAvatarMiddleware = controllers.uploadAvatarMiddleware;
+    console.log('✅ Upload avatar controller loaded successfully');
+    console.log('   - uploadAvatarImage:', typeof uploadAvatarImage);
+    console.log('   - uploadAvatarMiddleware:', typeof uploadAvatarMiddleware);
+    
+    // Định nghĩa route upload avatar
+    router.post('/profile/avatar', 
+        logRoute('POST /profile/avatar'), 
+        uploadAvatarMiddleware, 
+        asyncHandler(uploadAvatarImage, 'POST /profile/avatar')
+    );
+    console.log('✅ Route POST /profile/avatar registered successfully');
+} catch (error) {
+    console.error('❌ Error loading upload avatar controller:', error);
+    console.error('Error stack:', error.stack);
+    // Định nghĩa route error handler nếu controller không load được
+    router.post('/profile/avatar', (req, res) => {
+        res.status(500).json({
+            success: false,
+            message: 'Upload avatar service không khả dụng. Vui lòng kiểm tra server logs.',
+            error: error.message
         });
     });
 }

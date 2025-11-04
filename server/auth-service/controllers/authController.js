@@ -13,8 +13,9 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 // Đảm bảo thư mục uploads tồn tại
 const uploadsDir = path.join(__dirname, '../uploads');
 const coversDir = path.join(uploadsDir, 'covers');
+const avatarsDir = path.join(uploadsDir, 'avatars');
 
-[uploadsDir, coversDir].forEach(dir => {
+[uploadsDir, coversDir, avatarsDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
         console.log(`✅ Created directory: ${dir}`);
@@ -48,6 +49,36 @@ const uploadCover = multer({
     fileFilter: coverFileFilter,
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB
+    }
+});
+
+// Cấu hình multer cho avatar image
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, avatarsDir);
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const uuid = uuidv4().replace(/-/g, '');
+        const ext = path.extname(file.originalname);
+        const fileName = `avatar_${timestamp}_${uuid}${ext}`;
+        cb(null, fileName);
+    }
+});
+
+const avatarFileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Avatar image phải là file hình ảnh'), false);
+    }
+};
+
+const uploadAvatar = multer({
+    storage: avatarStorage,
+    fileFilter: avatarFileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB
     }
 });
 
@@ -146,6 +177,12 @@ exports.CreateAccount = async (req, res) => {
 
         // Trả về response (không trả về password)
         console.log('📤 Sending success response...');
+        // Convert avatar URL to full URL if needed
+        let avatarUrl = newUser.avatar_url || '/img/default-avatar.png';
+        if (avatarUrl && !avatarUrl.startsWith('http')) {
+            avatarUrl = `http://localhost:3001${avatarUrl.startsWith('/') ? avatarUrl : '/' + avatarUrl}`;
+        }
+        
         const response = {
             success: true,
             message: 'Đăng ký thành công!',
@@ -156,7 +193,8 @@ exports.CreateAccount = async (req, res) => {
                     fullName: newUser.fullName,
                     email: newUser.email,
                     role: newUser.role,
-                    avatar_url: newUser.avatar_url,
+                    avatar_url: avatarUrl,
+                    cover_url: '', // Empty on registration
                     is_verified: newUser.is_verified
                 },
                 token: token
@@ -311,6 +349,36 @@ exports.LoginAccount = async (req, res) => {
         );
 
         // Đăng nhập thành công
+        // Convert relative paths to full URLs for avatar and cover
+        let avatarUrl = user.avatar_url || '/img/default-avatar.png';
+        let coverUrl = user.cover_url || '';
+        
+        // Convert relative paths to full URLs
+        if (avatarUrl && !avatarUrl.startsWith('http')) {
+            // If it's already a full URL, keep it
+            if (avatarUrl.startsWith('/uploads/avatars/') || avatarUrl.startsWith('/uploads/covers/')) {
+                avatarUrl = `http://localhost:3001${avatarUrl}`;
+            } else if (avatarUrl.startsWith('/uploads/')) {
+                avatarUrl = `http://localhost:3001${avatarUrl}`;
+            } else if (avatarUrl.startsWith('/')) {
+                // Default avatar or other paths starting with /
+                avatarUrl = `http://localhost:3001${avatarUrl}`;
+            } else {
+                // Path without leading /
+                avatarUrl = `http://localhost:3001/${avatarUrl}`;
+            }
+        }
+        
+        if (coverUrl && !coverUrl.startsWith('http')) {
+            if (coverUrl.startsWith('/uploads/covers/') || coverUrl.startsWith('/uploads/')) {
+                coverUrl = `http://localhost:3001${coverUrl}`;
+            } else if (coverUrl.startsWith('/')) {
+                coverUrl = `http://localhost:3001${coverUrl}`;
+            } else if (coverUrl) {
+                coverUrl = `http://localhost:3001/${coverUrl}`;
+            }
+        }
+        
         res.status(200).json({
             success: true,
             message: 'Đăng nhập thành công!',
@@ -321,7 +389,8 @@ exports.LoginAccount = async (req, res) => {
                     fullName: user.fullName,
                     email: user.email,
                     role: user.role,
-                    avatar_url: user.avatar_url,
+                    avatar_url: avatarUrl,
+                    cover_url: coverUrl,
                     phone: user.phone,
                     is_verified: user.is_verified,
                     contributions: user.contributions,
@@ -364,6 +433,36 @@ exports.getCustomerByEmail = async (req, res) => {
             });
         }
 
+        // Convert relative paths to full URLs for avatar and cover
+        let avatarUrl = user.avatar_url || '/img/default-avatar.png';
+        let coverUrl = user.cover_url || '';
+        
+        // Convert relative paths to full URLs
+        if (avatarUrl && !avatarUrl.startsWith('http')) {
+            // If it's already a full URL, keep it
+            if (avatarUrl.startsWith('/uploads/avatars/') || avatarUrl.startsWith('/uploads/covers/')) {
+                avatarUrl = `http://localhost:3001${avatarUrl}`;
+            } else if (avatarUrl.startsWith('/uploads/')) {
+                avatarUrl = `http://localhost:3001${avatarUrl}`;
+            } else if (avatarUrl.startsWith('/')) {
+                // Default avatar or other paths starting with /
+                avatarUrl = `http://localhost:3001${avatarUrl}`;
+            } else {
+                // Path without leading /
+                avatarUrl = `http://localhost:3001/${avatarUrl}`;
+            }
+        }
+        
+        if (coverUrl && !coverUrl.startsWith('http')) {
+            if (coverUrl.startsWith('/uploads/covers/') || coverUrl.startsWith('/uploads/')) {
+                coverUrl = `http://localhost:3001${coverUrl}`;
+            } else if (coverUrl.startsWith('/')) {
+                coverUrl = `http://localhost:3001${coverUrl}`;
+            } else if (coverUrl) {
+                coverUrl = `http://localhost:3001/${coverUrl}`;
+            }
+        }
+        
         res.json({
             success: true,
             data: {
@@ -374,8 +473,8 @@ exports.getCustomerByEmail = async (req, res) => {
                 phone: user.phone || '',
                 address: user.address || '',
                 gender: user.gender || '',
-                avatar_url: user.avatar_url,
-                cover_url: user.cover_url || '',
+                avatar_url: avatarUrl,
+                cover_url: coverUrl,
                 bio: user.bio,
                 role: user.role,
                 university: user.university,
@@ -505,11 +604,20 @@ exports.uploadCoverImage = async (req, res) => {
         user.cover_url = coverUrl;
         await user.save();
 
+        // Convert to full URL for response
+        const fullCoverUrl = `http://localhost:3001${coverUrl}`;
+        
+        console.log('✅ Cover uploaded successfully:', {
+            email: user.email,
+            cover_url: coverUrl,
+            full_url: fullCoverUrl
+        });
+
         res.json({
             success: true,
             message: 'Upload ảnh bìa thành công',
             data: {
-                cover_url: `http://localhost:3001${coverUrl}`
+                cover_url: fullCoverUrl
             }
         });
     } catch (error) {
@@ -530,5 +638,117 @@ exports.uploadCoverImage = async (req, res) => {
     }
 };
 
+/**
+ * Upload avatar image
+ * POST /api/auth/profile/avatar
+ */
+exports.uploadAvatarImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn file ảnh đại diện'
+            });
+        }
+
+        const { email } = req.body;
+        if (!email) {
+            // Xóa file nếu email không có
+            if (req.file.path) {
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (e) {
+                    console.error('Error deleting file:', e);
+                }
+            }
+            return res.status(400).json({
+                success: false,
+                message: 'Email là bắt buộc'
+            });
+        }
+
+        // Tìm user
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            // Xóa file nếu user không tồn tại
+            if (req.file.path) {
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (e) {
+                    console.error('Error deleting file:', e);
+                }
+            }
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy người dùng'
+            });
+        }
+
+        // Xóa ảnh đại diện cũ nếu có (không phải default)
+        if (user.avatar_url && user.avatar_url !== '/img/default-avatar.png') {
+            // Xử lý cả relative path và absolute URL
+            let oldAvatarPath = user.avatar_url;
+            if (oldAvatarPath.startsWith('http://')) {
+                oldAvatarPath = oldAvatarPath.replace('http://localhost:3001', '');
+            }
+            // Chỉ xóa nếu là file trong thư mục uploads/avatars
+            if (oldAvatarPath.startsWith('/uploads/avatars/')) {
+                oldAvatarPath = path.join(__dirname, '..', oldAvatarPath);
+                if (fs.existsSync(oldAvatarPath)) {
+                    try {
+                        fs.unlinkSync(oldAvatarPath);
+                        console.log('✅ Deleted old avatar image:', oldAvatarPath);
+                    } catch (e) {
+                        console.error('Error deleting old avatar:', e);
+                    }
+                }
+            }
+        }
+
+        // Cập nhật avatar_url
+        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        user.avatar_url = avatarUrl;
+        await user.save();
+
+        console.log('✅ Avatar uploaded and saved:', {
+            email: user.email,
+            avatar_url: avatarUrl
+        });
+
+        // Convert to full URL for response
+        const fullAvatarUrl = `http://localhost:3001${avatarUrl}`;
+        
+        console.log('✅ Avatar uploaded successfully:', {
+            email: user.email,
+            avatar_url: avatarUrl,
+            full_url: fullAvatarUrl
+        });
+        
+        res.json({
+            success: true,
+            message: 'Upload ảnh đại diện thành công',
+            data: {
+                avatar_url: fullAvatarUrl
+            }
+        });
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        // Xóa file nếu có lỗi
+        if (req.file && req.file.path) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (e) {
+                console.error('Error deleting file:', e);
+            }
+        }
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi upload ảnh đại diện',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 // Export multer middleware
 exports.uploadCoverMiddleware = uploadCover.single('cover');
+exports.uploadAvatarMiddleware = uploadAvatar.single('avatar');

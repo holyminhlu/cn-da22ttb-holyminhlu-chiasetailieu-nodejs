@@ -143,6 +143,8 @@ app.listen(PORT, () =>{
     console.log(`✅ Test endpoint: http://localhost:${PORT}/test`);
     console.log(`✅ Register: POST http://localhost:${PORT}/register`);
     console.log(`✅ Login: POST http://localhost:${PORT}/login`);
+    console.log(`✅ Upload Avatar: POST http://localhost:${PORT}/profile/avatar`);
+    console.log(`✅ Upload Cover: POST http://localhost:${PORT}/profile/cover`);
     console.log('======================================\n');
 })
 

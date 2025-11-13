@@ -69,3 +69,4 @@ Nếu vẫn lỗi, kiểm tra:
 2. Course Service có đang chạy tại port 3004?
 3. Route `/courses` có được mount trong proxyRoutes.js?
 
+

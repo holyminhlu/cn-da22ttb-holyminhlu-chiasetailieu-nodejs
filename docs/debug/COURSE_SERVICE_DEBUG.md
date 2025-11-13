@@ -138,3 +138,4 @@ curl http://localhost:3000/api/courses
 
 Nếu tất cả các bước trên đều OK nhưng vẫn không hiển thị, kiểm tra console log trong browser để xem chi tiết lỗi.
 
+

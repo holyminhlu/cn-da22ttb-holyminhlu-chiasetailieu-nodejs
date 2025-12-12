@@ -1,0 +1,198 @@
+{
+  "hero": {
+    "title": "Tìm kiếm - Chia sẻ - Học tập Miễn phí",
+    "subtitle": "Slides, đề cương, bài tập và khoá học từ cộng đồng.",
+    "ctaPrimary": {
+      "label": "Tìm tài liệu",
+      "action": "/documents"
+    },
+    "ctaSecondary": {
+      "label": "Tải lên tài liệu",
+      "action": "/upload"
+    }
+  },
+  "featuredCollections": [
+    {
+      "id": "1",
+      "title": "Toán & Lý",
+      "description": "Hơn 500 tài liệu về Toán học và Vật lý",
+      "cover": "/img/articles/math-phys.png",
+      "count": 523
+    },
+    {
+      "id": "2",
+      "title": "CNTT & Lập trình",
+      "description": "Tài liệu lập trình và công nghệ thông tin",
+      "cover": "/img/articles/it.png",
+      "count": 876
+    },
+    {
+      "id": "3",
+      "title": "Tiếng Anh",
+      "description": "Tài liệu học tiếng Anh từ cơ bản đến nâng cao",
+      "cover": "/img/articles/english.png",
+      "count": 342
+    },
+    {
+      "id": "4",
+      "title": "Khoa học Tự nhiên",
+      "description": "Sinh học, Hóa học và các môn khoa học thực nghiệm",
+      "cover": "/img/articles/science.png",
+      "count": 456
+    },
+    {
+      "id": "5",
+      "title": "Kinh tế & Quản trị",
+      "description": "Tài liệu về Kinh tế học, Quản trị kinh doanh",
+      "cover": "/img/articles/economics.png",
+      "count": 289
+    }
+  ],
+  "documents": [
+    {
+      "id": "d1",
+      "title": "Slide Đại số tuyến tính",
+      "thumbnail": "/img/articles/dstt.png",
+      "author": {
+        "name": "Nguyễn A",
+        "avatar": "/img/perfil.jpg"
+      },
+      "tags": ["Toán", "Đại số"],
+      "downloads": 1240,
+      "rating": 4.8,
+      "year": 2024,
+      "fileType": "PDF",
+      "license": "CC-BY"
+    },
+    {
+      "id": "d2",
+      "title": "Hướng dẫn C# cơ bản",
+      "thumbnail": "/img/articles/csharp.png",
+      "author": {
+        "name": "Lê B",
+        "avatar": "/img/perfil.jpg"
+      },
+      "tags": ["CNTT", "C#"],
+      "downloads": 890,
+      "rating": 4.6,
+      "year": 2023,
+      "fileType": "PDF",
+      "license": "CC-BY-NC"
+    },
+    {
+      "id": "d3",
+      "title": "Bài tập Vật lý đại cương có lời giải",
+      "thumbnail": "/img/articles/ps.jpg",
+      "author": {
+        "name": "Trần Thị C",
+        "avatar": "/img/perfil.jpg"
+      },
+      "tags": ["Vật lý", "Bài tập"],
+      "downloads": 2156,
+      "rating": 4.9,
+      "year": 2024,
+      "fileType": "PDF",
+      "license": "CC-BY"
+    },
+    {
+      "id": "d4",
+      "title": "Giáo trình Cấu trúc dữ liệu và giải thuật",
+      "thumbnail": "/img/articles/algorithm.jpg",
+      "author": {
+        "name": "Lê Văn D",
+        "avatar": "/img/perfil.jpg"
+      },
+      "tags": ["CNTT", "Giải thuật"],
+      "downloads": 1893,
+      "rating": 4.7,
+      "year": 2023,
+      "fileType": "PDF",
+      "license": "CC-BY"
+    },
+    {
+      "id": "d5",
+      "title": "Tổng hợp đề thi TOEIC 2024",
+      "thumbnail": "/img/articles/toeic.png",
+      "author": {
+        "name": "English Center",
+        "avatar": "/img/perfil.jpg"
+      },
+      "tags": ["Tiếng Anh", "TOEIC"],
+      "downloads": 3456,
+      "rating": 4.9,
+      "year": 2024,
+      "fileType": "PDF",
+      "license": "CC-BY-NC"
+    },
+    {
+      "id": "d6",
+      "title": "Machine Learning cơ bản",
+      "thumbnail": "/img/articles/ml.png",
+      "author": {
+        "name": "AI Research",
+        "avatar": "/img/perfil.jpg"
+      },
+      "tags": ["CNTT", "Machine Learning"],
+      "downloads": 1567,
+      "rating": 4.8,
+      "year": 2024,
+      "fileType": "PDF",
+      "license": "CC-BY"
+    }
+  ],
+  "featuredInstructors": [
+    {
+      "id": "i1",
+      "name": "TS. Nguyễn Văn A",
+      "avatar": "/img/perfil.jpg",
+      "topics": ["Toán học", "Giải tích"],
+      "documentCount": 45,
+      "rating": 4.9
+    },
+    {
+      "id": "i2",
+      "name": "ThS. Lê Thị B",
+      "avatar": "/img/perfil.jpg",
+      "topics": ["Lập trình", "Web Development"],
+      "documentCount": 38,
+      "rating": 4.8
+    },
+    {
+      "id": "i3",
+      "name": "ThS. Trần Minh C",
+      "avatar": "/img/perfil.jpg",
+      "topics": ["Vật lý", "Cơ học"],
+      "documentCount": 32,
+      "rating": 4.7
+    }
+  ],
+  "communityQuestions": [
+    {
+      "id": "q1",
+      "title": "Cách học Vue.js hiệu quả cho người mới?",
+      "preview": "Mình mới bắt đầu học Vue.js, các bạn có lời khuyên gì không...",
+      "author": "Nguyễn Văn C",
+      "replies": 24,
+      "time": "2 giờ trước",
+      "tags": ["Lập trình", "Vue.js"]
+    },
+    {
+      "id": "q2",
+      "title": "Tài liệu ôn thi Toán cao cấp?",
+      "preview": "Có bạn nào có tài liệu ôn thi Toán cao cấp không ạ...",
+      "author": "Phạm Thị D",
+      "replies": 15,
+      "time": "5 giờ trước",
+      "tags": ["Toán học"]
+    },
+    {
+      "id": "q3",
+      "title": "Học tiếng Anh giao tiếp như thế nào?",
+      "preview": "Mình muốn cải thiện khả năng giao tiếp tiếng Anh...",
+      "author": "Lê Thị E",
+      "replies": 31,
+      "time": "1 ngày trước",
+      "tags": ["Tiếng Anh"]
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "programs": [
+    {"id": "it", "label": "CNTT"},
+    {"id": "math", "label": "Toán"},
+    {"id": "econ", "label": "Kinh tế"},
+    {"id": "physics", "label": "Vật lý"},
+    {"id": "chemistry", "label": "Hóa học"},
+    {"id": "biology", "label": "Sinh học"},
+    {"id": "engineering", "label": "Kỹ thuật"},
+    {"id": "business", "label": "Kinh doanh"}
+  ],
+  "categories": [
+    {"id": "programming", "label": "Lập trình"},
+    {"id": "theory", "label": "Lý thuyết"},
+    {"id": "practice", "label": "Thực hành"},
+    {"id": "exam", "label": "Ôn thi"},
+    {"id": "tutorial", "label": "Hướng dẫn"}
+  ],
+  "documents": [
+    {
+      "id": "d1",
+      "title": "Slide Đại số tuyến tính - Chương 1: Vector và không gian vector",
+      "thumbnail": "/img/articles/baigiang.jpg",
+      "authors": ["Nguyễn Văn A"],
+      "program": "Toán",
+      "programId": "math",
+      "tags": ["Đại số", "Lý thuyết", "Vector", "Linear Algebra"],
+      "downloads": 1240,
+      "rating": 4.8,
+      "year": 2024,
+      "fileType": "pdf",
+      "file": "/files/linear.pdf",
+      "license": "CC-BY",
+      "language": "vi",
+      "level": "basic",
+      "description": "Tài liệu giảng dạy về đại số tuyến tính, tập trung vào khái niệm vector và không gian vector.",
+      "uploadDate": "2024-01-15"
+    },
+    {
+      "id": "d2",
+      "title": "Hướng dẫn C# cơ bản từ A đến Z",
+      "thumbnail": "/img/articles/code.jpg",
+      "authors": ["Lê Văn B", "Trần Thị C"],
+      "program": "CNTT",
+      "programId": "it",
+      "tags": ["C#", "Lập trình", "Cơ bản"],
+      "downloads": 890,
+      "rating": 4.6,
+      "year": 2023,
+      "fileType": "pdf",
+      "file": "/files/csharp.pdf",
+      "license": "CC-BY-NC",
+      "language": "vi",
+      "level": "basic",
+      "description": "Tài liệu hướng dẫn lập trình C# từ cơ bản đến nâng cao, bao gồm các ví dụ thực tế.",
+      "uploadDate": "2023-12-10"
+    },
+    {
+      "id": "d3",
+      "title": "Bài tập Kinh tế vi mô - Chương 3: Cung và Cầu",
+      "thumbnail": "/img/articles/baibien.jpg",
+      "authors": ["Phạm Văn D"],
+      "program": "Kinh tế",
+      "programId": "econ",
+      "tags": ["Kinh tế vi mô", "Cung cầu", "Bài tập"],
+      "downloads": 1560,
+      "rating": 4.9,
+      "year": 2024,
+      "fileType": "pdf",
+      "file": "/files/microeconomics.pdf",
+      "license": "CC-BY-SA",
+      "language": "vi",
+      "level": "basic",
+      "description": "Tuyển tập bài tập về cung và cầu trong kinh tế vi mô, có đáp án chi tiết.",
+      "uploadDate": "2024-02-01"
+    },
+    {
+      "id": "d4",
+      "title": "Machine Learning Advanced Topics",
+      "thumbnail": "/img/articles/code.jpg",
+      "authors": ["Nguyễn Thị E"],
+      "program": "CNTT",
+      "programId": "it",
+      "tags": ["Machine Learning", "AI", "Nâng cao", "Deep Learning"],
+      "downloads": 720,
+      "rating": 4.7,
+      "year": 2024,
+      "fileType": "pptx",
+      "file": "/files/ml-advanced.pptx",
+      "license": "All rights reserved",
+      "language": "en",
+      "level": "advanced",
+      "description": "Advanced topics in machine learning including deep learning, neural networks, and optimization.",
+      "uploadDate": "2024-01-20"
+    },
+    {
+      "id": "d5",
+      "title": "Giải tích 1 - Tài liệu ôn thi cuối kỳ",
+      "thumbnail": "/img/articles/baigiang.jpg",
+      "authors": ["Hoàng Văn F"],
+      "program": "Toán",
+      "programId": "math",
+      "tags": ["Giải tích", "Ôn thi", "Toán cao cấp"],
+      "downloads": 2340,
+      "rating": 4.5,
+      "year": 2023,
+      "fileType": "pdf",
+      "file": "/files/calculus.pdf",
+      "license": "CC-BY",
+      "language": "vi",
+      "level": "basic",
+      "description": "Tài liệu tổng hợp kiến thức giải tích 1, bao gồm lý thuyết và bài tập luyện thi.",
+      "uploadDate": "2023-11-15"
+    }
+  ],
+  "featuredCollections": [
+    {
+      "id": "col1",
+      "title": "Tài liệu ôn thi CNTT",
+      "count": 45,
+      "icon": "💻"
+    },
+    {
+      "id": "col2",
+      "title": "Slide giảng dạy Toán",
+      "count": 32,
+      "icon": "📐"
+    },
+    {
+      "id": "col3",
+      "title": "Bài tập Kinh tế",
+      "count": 28,
+      "icon": "📊"
+    }
+  ],
+  "topAuthors": [
+    {
+      "id": "a1",
+      "name": "Nguyễn Văn A",
+      "documentsCount": 25,
+      "avatar": "/img/articles/baigiang.jpg"
+    },
+    {
+      "id": "a2",
+      "name": "Lê Văn B",
+      "documentsCount": 18,
+      "avatar": "/img/articles/code.jpg"
+    },
+    {
+      "id": "a3",
+      "name": "Trần Thị C",
+      "documentsCount": 15,
+      "avatar": "/img/articles/baibien.jpg"
+    }
+  ],
+  "quickTags": [
+    "Lập trình",
+    "Toán học",
+    "Kinh tế",
+    "Ôn thi",
+    "Thực hành",
+    "Lý thuyết",
+    "Bài tập",
+    "Hướng dẫn"
+  ]
+}
+

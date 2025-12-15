@@ -7,10 +7,7 @@ const coursesProxy = createProxyMiddleware({
   // Same pattern as documentsProxy - when mounted at /courses, path is already stripped
   // So /api/courses -> /courses in router -> / (empty) in middleware
   // We need to add /courses prefix back
-  pathRewrite: (path, req) => {
-    // Add /courses prefix to match service routes
-    return `/courses${path}`;
-  },
+  pathRewrite: { '^/(.*)': '/courses/$1' }, // Add /courses prefix to match service routes
   selfHandleResponse: false,
   timeout: 300000, // 5 minutes timeout for large file uploads
   proxyTimeout: 300000, // 5 minutes proxy timeout
@@ -46,9 +43,6 @@ const coursesProxy = createProxyMiddleware({
       proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
       console.log('📤 Forwarding parsed body:', bodyData);
       proxyReq.write(bodyData);
-      // Request stream was already consumed by Express, so we must end
-      // the proxy request manually after writing the serialized body.
-      proxyReq.end();
     } else if (req.headers['content-type']?.includes('multipart/form-data')) {
       console.log('📦 Multipart/form-data detected - forwarding stream directly');
     } else if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {

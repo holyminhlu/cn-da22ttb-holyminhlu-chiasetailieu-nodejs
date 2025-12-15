@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 
 const courseRoute = require('./routes/courseRoute');
+const paymentRoute = require('./routes/paymentRoute');
 
 const app = express();
 const PORT = 3004;
@@ -144,12 +145,19 @@ app.get('/test', (req, res) => {
             search: 'GET /courses/search',
             getById: 'GET /courses/:id',
             enroll: 'POST /courses/:id/enroll',
+            payments: 'GET /payments',
+            createPayment: 'POST /payments',
+            getUserPayments: 'GET /payments/user',
+            getPaymentStatus: 'GET /payments/:payment_id/status',
+            paymentIPN: 'POST /payments/ipn',
+            paymentWebhook: 'POST /payments/webhook',
             test: 'GET /test'
         }
     });
 });
 
 app.use('/courses', courseRoute);
+app.use('/payments', paymentRoute);
 
 app.get('/', (req, res) => {
     res.json({
@@ -161,6 +169,12 @@ app.get('/', (req, res) => {
             search: 'GET /courses/search',
             getById: 'GET /courses/:id',
             enroll: 'POST /courses/:id/enroll',
+            payments: 'GET /payments',
+            createPayment: 'POST /payments',
+            getUserPayments: 'GET /payments/user',
+            getPaymentStatus: 'GET /payments/:payment_id/status',
+            paymentIPN: 'POST /payments/ipn',
+            paymentWebhook: 'POST /payments/webhook',
             test: 'GET /test'
         }
     });
@@ -180,6 +194,12 @@ app.use((req, res) => {
             search: 'GET /courses/search',
             getById: 'GET /courses/:id',
             enroll: 'POST /courses/:id/enroll',
+            payments: 'GET /payments',
+            createPayment: 'POST /payments',
+            getUserPayments: 'GET /payments/user',
+            getPaymentStatus: 'GET /payments/:payment_id/status',
+            paymentIPN: 'POST /payments/ipn',
+            paymentWebhook: 'POST /payments/webhook',
             test: 'GET /test',
             root: 'GET /'
         }

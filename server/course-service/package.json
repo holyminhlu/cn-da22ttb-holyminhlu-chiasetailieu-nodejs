@@ -6,17 +6,18 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "create-collection": "node scripts/create-enrollments-collection.js"
+    "create-collection": "node scripts/create-enrollments-collection.js",
+    "create-test-courses": "node scripts/create-test-courses.js"
   },
   "author": "HoLyMinhLu",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "mongoose": "^8.15.1",
     "multer": "^1.4.5-lts.1",
+    "sepay-pg-node": "^1.0.0",
     "uuid": "^9.0.1"
   }
 }
-
-

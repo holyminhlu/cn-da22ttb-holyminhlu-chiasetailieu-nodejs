@@ -16,27 +16,32 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Parse JSON body conditionally - skip for streaming endpoints to avoid conflicts
+// Parse JSON body conditionally - skip for courses enroll and forum routes to avoid stream conflicts
 app.use((req, res, next) => {
-  const originalUrl = req.originalUrl || '';
-  const currentPath = req.path || '';
-  const isCoursesRoute = originalUrl.includes('/courses') || currentPath.includes('/courses');
-  const isEnrollRoute = isCoursesRoute &&
-    (originalUrl.includes('/enroll') || currentPath.includes('/enroll'));
-  const isProgressRoute = isCoursesRoute &&
-    (originalUrl.includes('/progress') || currentPath.includes('/progress'));
-
-  const shouldSkipJsonParsing =
-    (isEnrollRoute && req.method === 'POST') ||
-    (isProgressRoute && req.method === 'PUT');
-
-  if (shouldSkipJsonParsing) {
-    const reason = isEnrollRoute ? 'enroll' : 'progress';
-    console.log(`⏭️ Skipping body parsing for courses ${reason} - proxy will forward raw stream`);
+  // Skip body parsing for courses enroll to let proxy handle raw stream
+  const isEnrollRoute = (req.originalUrl.includes('/courses') && req.originalUrl.includes('/enroll')) ||
+                        (req.path.includes('/courses') && req.path.includes('/enroll'));
+  
+  // Skip body parsing for forum routes to avoid ECONNRESET issues
+  const isForumRoute = req.originalUrl.includes('/forum') || req.path.includes('/forum');
+  
+  // Skip body parsing for SePay IPN - IPN sẽ được parse bởi course service
+  const isSePayIPN = req.originalUrl.includes('/payment/sepay/ipn') || req.path.includes('/payment/sepay/ipn');
+  
+  if ((isEnrollRoute && req.method === 'POST') || 
+      (isForumRoute && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) ||
+      (isSePayIPN && req.method === 'POST')) {
+    if (isForumRoute) {
+      console.log('⏭️ Skipping body parsing for forum route - proxy will handle raw stream');
+    } else if (isSePayIPN) {
+      console.log('⏭️ Skipping body parsing for SePay IPN - proxy will handle');
+    } else {
+      console.log('⏭️ Skipping body parsing for courses enroll - proxy will handle');
+    }
     return next();
   }
   
-  // Parse JSON for all other routes
+  // Parse JSON for other routes (including PUT /courses/:id/progress)
   const jsonParser = express.json({ 
     limit: '50mb',
     verify: (req, res, buf, encoding) => {
@@ -65,6 +70,28 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use(loggerMid);            // ✅ logger có thể đọc body nếu cần
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API Gateway is running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      courses: 'GET /api/courses',
+      documents: 'GET /api/documents',
+      auth: 'POST /api/auth/login',
+      payments: 'POST /api/payments',
+      test: 'GET /test'
+    },
+    services: {
+      courseService: 'http://localhost:3004',
+      documentService: 'http://localhost:3003',
+      authService: 'http://localhost:3001'
+    }
+  });
+});
+
 // Test endpoint
 app.get('/test', (req, res) => {
   res.json({
@@ -73,7 +100,8 @@ app.get('/test', (req, res) => {
     routes: {
       courses: '/api/courses',
       documents: '/api/documents',
-      auth: '/api/auth'
+      auth: '/api/auth',
+      payments: '/api/payments'
     }
   });
 });
@@ -87,72 +115,18 @@ app.use((req, res) => {
     success: false,
     message: `Route ${req.method} ${req.originalUrl} không tồn tại`,
     availableRoutes: {
+      root: 'GET /',
       courses: 'GET /api/courses',
       documents: 'GET /api/documents',
       auth: 'POST /api/auth/login',
+      payments: 'POST /api/payments',
       test: 'GET /test'
     }
   });
 });
 
-// Global error handler - Bắt tất cả lỗi không được handle
-app.use((err, req, res, next) => {
-  console.error('\n💥 ========== UNHANDLED ERROR ==========');
-  console.error('Error:', err);
-  console.error('Request:', req.method, req.path);
-  console.error('Stack:', err.stack);
-  console.error('======================================\n');
-  
-  res.status(500).json({
-    success: false,
-    message: 'Đã có lỗi xảy ra trên server',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+app.listen(PORT, () => {
+  console.log(`API Gateway chạy tại http://localhost:${PORT}`);
+  console.log(`Test endpoint: http://localhost:${PORT}/test`);
+  console.log(`Courses endpoint: http://localhost:${PORT}/api/courses`);
 });
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('\n💥 ========== UNCAUGHT EXCEPTION ==========');
-  console.error('Error:', err);
-  console.error('Stack:', err.stack);
-  console.error('==========================================\n');
-  // Don't exit - keep server running
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('\n💥 ========== UNHANDLED REJECTION ==========');
-  console.error('Reason:', reason);
-  console.error('Promise:', promise);
-  console.error('============================================\n');
-  // Don't exit - keep server running
-});
-
-// Start server
-try {
-  const server = app.listen(PORT, () => {
-    console.log('\n🚀 =======================================');
-    console.log(`✅ API Gateway đang lắng nghe tại http://localhost:${PORT}`);
-    console.log(`✅ Test endpoint: http://localhost:${PORT}/test`);
-    console.log(`✅ Courses endpoint: http://localhost:${PORT}/api/courses`);
-    console.log(`✅ Documents endpoint: http://localhost:${PORT}/api/documents`);
-    console.log(`✅ Auth endpoint: http://localhost:${PORT}/api/auth`);
-    console.log(`✅ Forum endpoint: http://localhost:${PORT}/api/forum`);
-    console.log('======================================\n');
-    console.log('💡 Nhấn Ctrl+C để dừng server\n');
-  });
-
-  // Handle server errors
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`\n❌ Port ${PORT} đã được sử dụng. Vui lòng chọn port khác hoặc dừng service đang chạy.\n`);
-    } else {
-      console.error('\n❌ Server error:', err);
-    }
-    process.exit(1);
-  });
-} catch (err) {
-  console.error('\n❌ Lỗi khởi động server:', err);
-  console.error('Stack:', err.stack);
-  process.exit(1);
-}

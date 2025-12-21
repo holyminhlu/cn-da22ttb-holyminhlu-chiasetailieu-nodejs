@@ -14,7 +14,7 @@ try {
     updateCustomerInfo = controllers.updateCustomerInfo;
     checkEmailExists = controllers.checkEmailExists;
     verifyEmail = controllers.verifyEmail;
-    console.log('✅ Controllers loaded successfully');
+    console.log('✅ Auth controllers loaded successfully');
 } catch (error) {
     console.error('❌ Error loading controllers:', error);
     throw error;
@@ -90,6 +90,7 @@ router.get('/login', (req, res) => {
 });
 
 // Protected routes (có thể thêm middleware JWT sau)
+// Note: Admin routes đã được tách ra thành adminRoute.js riêng
 router.get('/customer', getCustomerByEmail);
 router.post('/customer/update', updateCustomerInfo);
 

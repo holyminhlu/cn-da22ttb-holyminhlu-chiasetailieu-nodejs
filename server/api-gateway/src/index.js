@@ -16,51 +16,23 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Parse JSON body conditionally - skip for courses enroll and forum routes to avoid stream conflicts
+// ⚠️ CRITICAL: DO NOT use body-parser for proxy routes!
+// Body parsing should ONLY happen at the destination service, not at gateway.
+// Parsing body at gateway causes request to be consumed/aborted before proxy can forward it.
+
+// Only parse body for non-proxy routes (if any)
+// For all /api/* routes, skip body parsing and let services handle it
 app.use((req, res, next) => {
-  // Skip body parsing for courses enroll to let proxy handle raw stream
-  const isEnrollRoute = (req.originalUrl.includes('/courses') && req.originalUrl.includes('/enroll')) ||
-                        (req.path.includes('/courses') && req.path.includes('/enroll'));
-  
-  // Skip body parsing for forum routes to avoid ECONNRESET issues
-  const isForumRoute = req.originalUrl.includes('/forum') || req.path.includes('/forum');
-  
-  if ((isEnrollRoute && req.method === 'POST') || 
-      (isForumRoute && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH'))) {
-    if (isForumRoute) {
-      console.log('⏭️ Skipping body parsing for forum route - proxy will handle raw stream');
-    } else {
-      console.log('⏭️ Skipping body parsing for courses enroll - proxy will handle');
-    }
+  // Skip body parsing for ALL /api routes - let services handle body parsing
+  if (req.path.startsWith('/api/')) {
+    console.log(`⏭️ Skipping body parsing for proxy route: ${req.method} ${req.originalUrl}`);
     return next();
   }
   
-  // Parse JSON for other routes (including PUT /courses/:id/progress)
-  const jsonParser = express.json({ 
-    limit: '50mb',
-    verify: (req, res, buf, encoding) => {
-      // Store raw body for debugging if needed
-      req.rawBody = buf;
-    }
-  });
-  
-  jsonParser(req, res, (err) => {
-    if (err) {
-      console.error('❌ JSON parsing error:', err.message);
-      console.error('   Path:', req.originalUrl);
-      console.error('   Content-Type:', req.headers['content-type']);
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid JSON in request body',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
-      });
-    }
-    next();
-  });
+  // Only parse body for non-proxy routes (like /test, /, etc.)
+  const jsonParser = express.json({ limit: '50mb' });
+  jsonParser(req, res, next);
 });
-
-// Parse URL-encoded form data
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use(loggerMid);            // ✅ logger có thể đọc body nếu cần
 
@@ -78,9 +50,11 @@ app.get('/', (req, res) => {
       test: 'GET /test'
     },
     services: {
-      courseService: 'http://localhost:3004',
-      documentService: 'http://localhost:3003',
-      authService: 'http://localhost:3001'
+      courseService: process.env.COURSE_SERVICE_URL || 'http://localhost:3004',
+      documentService: process.env.DOCUMENT_SERVICE_URL || 'http://localhost:3003',
+      authService: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
+      blogService: process.env.BLOG_SERVICE_URL || 'http://localhost:3006',
+      forumService: process.env.FORUM_SERVICE_URL || 'http://localhost:3005'
     }
   });
 });

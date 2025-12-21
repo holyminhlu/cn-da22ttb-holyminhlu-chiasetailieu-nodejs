@@ -1,0 +1,21 @@
+{
+  "name": "blog-service",
+  "version": "1.0.0",
+  "description": "blog-service for OpenLearnFoundation - Quản lý bài viết blog",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create-collection": "node scripts/create-blogposts-collection.js"
+  },
+  "author": "OpenLearnFoundation",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mongoose": "^8.15.1",
+    "uuid": "^9.0.1"
+  }
+}
+
+

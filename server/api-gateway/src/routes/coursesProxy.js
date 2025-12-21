@@ -1,19 +1,29 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Create proxy middleware with detailed logging
+// When mounted at /courses in router, path is already /courses/...
+// So we need to rewrite to remove /courses prefix since service expects /courses/...
+// Actually, when router matches /courses, req.url becomes /694671d5a8692a215c3f2906/progress
+// And service expects /courses/694671d5a8692a215c3f2906/progress
+// So we need to add /courses prefix back
+const COURSE_SERVICE_URL = process.env.COURSE_SERVICE_URL || 'http://localhost:3004';
+
 const coursesProxy = createProxyMiddleware({
-  target: 'http://localhost:3004', // Course service port
+  target: COURSE_SERVICE_URL, // Course service port
   changeOrigin: true,
-  // Same pattern as documentsProxy - when mounted at /courses, path is already stripped
-  // So /api/courses -> /courses in router -> / (empty) in middleware
-  // We need to add /courses prefix back
-  pathRewrite: { '^/(.*)': '/courses/$1' }, // Add /courses prefix to match service routes
+  pathRewrite: {
+    // When mounted at /courses, req.url is like /694671d5a8692a215c3f2906/progress
+    // We need to rewrite to /courses/694671d5a8692a215c3f2906/progress
+    '^/(.*)$': '/courses/$1' // Add /courses prefix to all paths
+  },
   selfHandleResponse: false,
-  timeout: 300000, // 5 minutes timeout for large file uploads
-  proxyTimeout: 300000, // 5 minutes proxy timeout
+  timeout: 35000, // 35s timeout (slightly more than frontend 30s)
+  proxyTimeout: 35000, // 35s proxy timeout
   preserveHeaderKeyCase: true,
   // Don't buffer - let stream pass through for better performance
   buffer: false,
+  // Log all methods including PUT
+  logLevel: 'debug',
   onProxyReq: (proxyReq, req, res) => {
     const requestStartTime = Date.now()
     console.log('\n📤 ========== PROXY REQUEST (Courses) ==========');
@@ -35,19 +45,16 @@ const coursesProxy = createProxyMiddleware({
     // Store start time for response logging
     req._proxyStartTime = requestStartTime
     
-    // For POST/PUT/PATCH with parsed body, forward it
-    // For enroll endpoint, body should not be parsed, so stream will pass through
-    if ((req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') && req.body && Object.keys(req.body).length > 0) {
-      const bodyData = JSON.stringify(req.body);
-      proxyReq.setHeader('Content-Type', 'application/json');
-      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-      console.log('📤 Forwarding parsed body:', bodyData);
-      proxyReq.write(bodyData);
-    } else if (req.headers['content-type']?.includes('multipart/form-data')) {
-      console.log('📦 Multipart/form-data detected - forwarding stream directly');
-    } else if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-      console.log('⚠️ POST/PUT/PATCH without parsed body - forwarding raw stream');
-      console.log('   This might cause issues if body is not properly streamed');
+    // ⚠️ CRITICAL: DO NOT manually write body here!
+    // http-proxy-middleware automatically handles body streaming.
+    // If body was parsed at gateway, req.body exists but stream is consumed.
+    // Since we skip body parsing at gateway, raw stream passes through automatically.
+    
+    // Just log for debugging
+    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+      console.log(`   Body will be streamed automatically by proxy`);
+      console.log(`   Content-Type: ${req.headers['content-type']}`);
+      console.log(`   Content-Length: ${req.headers['content-length'] || 'unknown'}`);
     }
     console.log('================================================\n');
   },

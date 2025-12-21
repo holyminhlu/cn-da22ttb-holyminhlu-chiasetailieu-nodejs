@@ -752,3 +752,6 @@ exports.uploadAvatarImage = async (req, res) => {
 // Export multer middleware
 exports.uploadCoverMiddleware = uploadCover.single('cover');
 exports.uploadAvatarMiddleware = uploadAvatar.single('avatar');
+
+// Note: Admin functions (getAllUsers, updateUser, deleteUser) đã được tách ra
+// thành adminController.js để tuân thủ kiến trúc microservice

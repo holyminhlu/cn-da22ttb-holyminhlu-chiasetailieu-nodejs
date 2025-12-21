@@ -1,7 +1,9 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+
 module.exports = createProxyMiddleware({
-  target: 'http://localhost:3001',
+  target: AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/auth': '' },
   selfHandleResponse: false, // Đảm bảo proxy tự xử lý response

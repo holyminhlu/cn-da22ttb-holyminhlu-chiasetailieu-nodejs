@@ -1,10 +1,11 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
+const FORUM_SERVICE_URL = process.env.FORUM_SERVICE_URL || 'http://localhost:3005';
+
 module.exports = createProxyMiddleware({
-  target: 'http://localhost:3005',
+  target: FORUM_SERVICE_URL,
   changeOrigin: true,
-  // No pathRewrite needed - path is already /posts when mounted at /forum
-  // /api/forum/posts -> /forum/posts -> /posts (after router strips /forum)
+  pathRewrite: { '^/api/forum': '' }, // /api/forum/posts -> /posts
   selfHandleResponse: false,
   timeout: 30000, // 30 seconds timeout
   proxyTimeout: 30000, // 30 seconds proxy timeout

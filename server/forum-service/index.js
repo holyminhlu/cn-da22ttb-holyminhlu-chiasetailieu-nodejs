@@ -31,8 +31,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB connection
-mongoose.connect('mongodb://127.0.0.1:27017/EduShareDB', {
+// MongoDB connection - supports both local and cloud
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/EduShareDB';
+mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
 })
@@ -40,7 +41,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/EduShareDB', {
     console.log('\n✅ ========== MONGODB CONNECTED ==========');
     console.log('Database: EduShareDB');
     console.log('Collection: Posts (Forum)');
-    console.log('Connection: mongodb://127.0.0.1:27017/EduShareDB');
+    console.log('Connection:', MONGODB_URI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
     console.log('==========================================\n');
   })
   .catch(err => {
@@ -110,6 +111,8 @@ app.listen(PORT, () => {
   console.log(`✅ Static files: http://localhost:${PORT}/uploads`);
   console.log('======================================\n');
 });
+
+
 
 
 

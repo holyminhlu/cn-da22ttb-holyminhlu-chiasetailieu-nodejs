@@ -131,16 +131,6 @@ const documentSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    rating: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 5
-    },
-    ratingCount: {
-        type: Number,
-        default: 0
-    },
     uploadDate: {
         type: Date,
         default: Date.now
@@ -158,7 +148,6 @@ documentSchema.index({ status: 1 })
 documentSchema.index({ visibility: 1 })
 documentSchema.index({ createdAt: -1 })
 documentSchema.index({ downloads: -1 })
-documentSchema.index({ rating: -1 })
 documentSchema.index({ 'author.name': 'text', title: 'text', description: 'text', tags: 'text' })
 
 module.exports = mongoose.model('TaiLieu', documentSchema)

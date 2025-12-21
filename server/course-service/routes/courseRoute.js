@@ -4,7 +4,7 @@ const router = express.Router();
 console.log('\n📋 Loading course routes...');
 
 // Import controllers
-let getAllCourses, searchCourses, getCourseById, enrollCourse, getEnrollment, getMyEnrollments, createCourse, uploadCourseFilesMiddleware, updateProgress;
+let getAllCourses, searchCourses, getCourseById, enrollCourse, getEnrollment, getMyEnrollments, createCourse, uploadCourseFilesMiddleware, updateProgress, getCourseStats;
 
 try {
     const controllers = require('../controllers/courseController');
@@ -17,6 +17,7 @@ try {
     createCourse = controllers.createCourse;
     uploadCourseFilesMiddleware = controllers.uploadCourseFilesMiddleware;
     updateProgress = controllers.updateProgress;
+    getCourseStats = controllers.getCourseStats;
     console.log('✅ Controllers loaded successfully');
 } catch (error) {
     console.error('❌ Error loading controllers:', error);
@@ -99,6 +100,7 @@ const asyncHandler = (fn, routeName) => {
 };
 
 // Routes - Order matters! Specific routes must come before parameterized routes
+router.get('/stats', logRoute('GET /courses/stats'), asyncHandler(getCourseStats, 'GET /courses/stats'));
 router.get('/search', logRoute('GET /courses/search'), asyncHandler(searchCourses, 'GET /courses/search'));
 router.get('/my-enrollments/:userId', logRoute('GET /courses/my-enrollments/:userId'), asyncHandler(getMyEnrollments, 'GET /courses/my-enrollments/:userId'));
 router.post('/', logRoute('POST /courses'), uploadCourseFilesMiddleware, asyncHandler(createCourse, 'POST /courses'));

@@ -479,9 +479,6 @@ exports.searchDocuments = async (req, res) => {
             case 'downloads':
                 sort = { downloads: -1 }
                 break
-            case 'rating':
-                sort = { rating: -1 }
-                break
             case 'relevance':
             default:
                 if (q && q.trim()) {
@@ -556,8 +553,6 @@ exports.searchDocuments = async (req, res) => {
                 license: doc.license || '',
                 downloads: doc.downloads || 0,
                 views: doc.views || 0,
-                rating: doc.rating || 0,
-                ratingCount: doc.ratingCount || 0,
                 uploadDate: doc.uploadDate || doc.createdAt
             }
         })
@@ -610,9 +605,6 @@ exports.getAllDocuments = async (req, res) => {
                 break
             case 'downloads':
                 sort = { downloads: -1 }
-                break
-            case 'rating':
-                sort = { rating: -1 }
                 break
             default:
                 sort = { createdAt: -1 }
@@ -670,8 +662,6 @@ exports.getAllDocuments = async (req, res) => {
                 license: doc.license || '',
                 downloads: doc.downloads || 0,
                 views: doc.views || 0,
-                rating: doc.rating || 0,
-                ratingCount: doc.ratingCount || 0,
                 uploadDate: doc.uploadDate || doc.createdAt
             }
         })
@@ -726,9 +716,8 @@ exports.getDocumentById = async (req, res) => {
             })
         }
 
-        // Increment views
-        document.views = (document.views || 0) + 1
-        await document.save()
+        // Note: Views should be incremented via POST /documents/:id/view endpoint
+        // This GET endpoint only returns document data without incrementing views
 
         // Safe handling for fileType
         let fileType = 'PDF'
@@ -775,8 +764,6 @@ exports.getDocumentById = async (req, res) => {
                 visibility: document.visibility,
                 downloads: document.downloads,
                 views: document.views,
-                rating: document.rating,
-                ratingCount: document.ratingCount,
                 uploadDate: document.uploadDate || document.createdAt,
                 createdAt: document.createdAt,
                 updatedAt: document.updatedAt
@@ -922,8 +909,6 @@ exports.getUserBookmarks = async (req, res) => {
                 license: doc.license || '',
                 downloads: doc.downloads || 0,
                 views: doc.views || 0,
-                rating: doc.rating || 0,
-                ratingCount: doc.ratingCount || 0,
                 uploadDate: doc.uploadDate || doc.createdAt
             }
         })
@@ -1296,4 +1281,149 @@ exports.removeBookmark = async (req, res) => {
         })
     }
 }
+
+/**
+ * Increment document views
+ * POST /documents/:id/view
+ */
+exports.incrementViews = async (req, res) => {
+    try {
+        const { id } = req.params
+
+        console.log('\n👁️ ========== INCREMENT VIEWS ==========')
+        console.log('Document ID:', id)
+
+        // Find document by document_id or _id
+        let document = await Document.findOne({ document_id: id })
+        
+        if (!document && /^[0-9a-fA-F]{24}$/.test(id)) {
+            try {
+                document = await Document.findById(id)
+            } catch (castError) {
+                console.log('⚠️ CastError when using findById, ignoring:', castError.message)
+            }
+        }
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                message: 'Tài liệu không tồn tại'
+            })
+        }
+
+        // Get current views count before increment
+        const oldViews = document.views || 0
+
+        // Increment views using atomic operation to prevent race conditions
+        const result = await Document.findOneAndUpdate(
+            { _id: document._id },
+            { $inc: { views: 1 } },
+            { new: true, select: 'views document_id' }
+        )
+
+        if (!result) {
+            console.error('❌ Failed to update views count')
+            return res.status(500).json({
+                success: false,
+                message: 'Không thể cập nhật lượt xem'
+            })
+        }
+
+        console.log(`✅ Views incremented. Old: ${oldViews} → New: ${result.views}`)
+        console.log('=========================================\n')
+
+        res.json({
+            success: true,
+            message: 'Đã cập nhật lượt xem',
+            data: {
+                document_id: document.document_id,
+                views: result.views
+            }
+        })
+    } catch (error) {
+        console.error('❌ Increment views error:', error)
+        res.status(500).json({
+            success: false,
+            message: 'Đã có lỗi xảy ra khi cập nhật lượt xem.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        })
+    }
+}
+
+/**
+ * Increment document downloads
+ * POST /documents/:id/download
+ */
+exports.incrementDownloads = async (req, res) => {
+    try {
+        const { id } = req.params
+        const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+        console.log('\n⬇️ ========== INCREMENT DOWNLOADS ==========')
+        console.log('Request ID:', requestId)
+        console.log('Document ID:', id)
+        console.log('Timestamp:', new Date().toISOString())
+        console.log('Headers:', JSON.stringify(req.headers, null, 2))
+
+        // Find document by document_id or _id
+        let document = await Document.findOne({ document_id: id })
+        
+        if (!document && /^[0-9a-fA-F]{24}$/.test(id)) {
+            try {
+                document = await Document.findById(id)
+            } catch (castError) {
+                console.log('⚠️ CastError when using findById, ignoring:', castError.message)
+            }
+        }
+
+        if (!document) {
+            console.log('❌ Document not found for ID:', id)
+            return res.status(404).json({
+                success: false,
+                message: 'Tài liệu không tồn tại'
+            })
+        }
+
+        // Get current downloads count before increment
+        const oldDownloads = document.downloads || 0
+        console.log('📊 Current downloads count:', oldDownloads)
+
+        // Increment downloads using atomic operation to prevent race conditions
+        const result = await Document.findOneAndUpdate(
+            { _id: document._id },
+            { $inc: { downloads: 1 } },
+            { new: true, select: 'downloads document_id' }
+        )
+
+        if (!result) {
+            console.error('❌ Failed to update downloads count')
+            return res.status(500).json({
+                success: false,
+                message: 'Không thể cập nhật lượt tải'
+            })
+        }
+
+        console.log(`✅ Downloads incremented. Old: ${oldDownloads} → New: ${result.downloads}`)
+        console.log('Request ID:', requestId)
+        console.log('=========================================\n')
+
+        res.json({
+            success: true,
+            message: 'Đã cập nhật lượt tải',
+            data: {
+                document_id: document.document_id,
+                downloads: result.downloads,
+                requestId: requestId
+            }
+        })
+    } catch (error) {
+        console.error('❌ Increment downloads error:', error)
+        res.status(500).json({
+            success: false,
+            message: 'Đã có lỗi xảy ra khi cập nhật lượt tải.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        })
+    }
+}
+
 

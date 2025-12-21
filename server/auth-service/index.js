@@ -65,8 +65,9 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
-// mongoose.connect('mongodb+srv://holyminhludauden_db_user:<db_password>@openlearnfoundation.fniy67o.mongodb.net/EduShareDB')
-mongoose.connect('mongodb://127.0.0.1:27017/EduShareDB')    
+// MongoDB connection - supports both local and cloud
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/EduShareDB';
+mongoose.connect(MONGODB_URI)    
     .then(()=>console.log('Kết nối MongoDB thành công'))
     .catch(err => console.error('Lỗi kết nối MongoDB',err));
 
@@ -88,7 +89,11 @@ app.get('/test', (req, res) => {
 // Serve static files for covers
 app.use('/uploads', express.static('uploads'));
 
+// Auth routes (public)
 app.use('/', require('./routes/authRoute'));
+
+// Admin routes (protected, requires JWT + admin role)
+app.use('/admin', require('./routes/adminRoute'));
 
 app.get('/', (req, res)=>{
     res.json({
@@ -140,11 +145,17 @@ app.listen(PORT, () =>{
     console.log('\n🚀 =======================================');
     console.log(`✅ Auth-Service đang lắng nghe tại http://localhost:${PORT}`);
     console.log(`✅ MongoDB: mongodb://127.0.0.1:27017/EduShareDB`);
-    console.log(`✅ Test endpoint: http://localhost:${PORT}/test`);
-    console.log(`✅ Register: POST http://localhost:${PORT}/register`);
-    console.log(`✅ Login: POST http://localhost:${PORT}/login`);
-    console.log(`✅ Upload Avatar: POST http://localhost:${PORT}/profile/avatar`);
-    console.log(`✅ Upload Cover: POST http://localhost:${PORT}/profile/cover`);
+    console.log(`\n📋 Public Endpoints:`);
+    console.log(`   - Test: GET http://localhost:${PORT}/test`);
+    console.log(`   - Register: POST http://localhost:${PORT}/register`);
+    console.log(`   - Login: POST http://localhost:${PORT}/login`);
+    console.log(`   - Upload Avatar: POST http://localhost:${PORT}/profile/avatar`);
+    console.log(`   - Upload Cover: POST http://localhost:${PORT}/profile/cover`);
+    console.log(`\n🔐 Admin Endpoints (JWT + Admin role required):`);
+    console.log(`   - Get Users: GET http://localhost:${PORT}/admin/users`);
+    console.log(`   - Get User: GET http://localhost:${PORT}/admin/users/:id`);
+    console.log(`   - Update User: PUT http://localhost:${PORT}/admin/users/:id`);
+    console.log(`   - Delete User: DELETE http://localhost:${PORT}/admin/users/:id`);
     console.log('======================================\n');
 })
 

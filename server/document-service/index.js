@@ -9,13 +9,24 @@ const app = express();
 const PORT = 3003;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase body size limit
 
 // Serve static files từ thư mục uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware để log tất cả requests
 app.use((req, res, next) => {
+    // Handle request abort
+    req.on('aborted', () => {
+        console.log(`\n⚠️ Request aborted: ${req.method} ${req.path}`);
+    });
+    
+    req.on('close', () => {
+        if (!res.headersSent) {
+            console.log(`\n⚠️ Request closed before response: ${req.method} ${req.path}`);
+        }
+    });
+    
     console.log('\n📥 ========== NEW REQUEST ==========');
     console.log(`Time: ${new Date().toISOString()}`);
     console.log(`Method: ${req.method}`);
@@ -53,24 +64,40 @@ app.use((req, res, next) => {
 
 // Error handler cho middleware
 app.use((err, req, res, next) => {
+    // Ignore request aborted errors (client closed connection)
+    if (err.code === 'ECONNABORTED' || err.type === 'request.aborted') {
+        console.log('⚠️ Request aborted by client:', req.method, req.path);
+        return; // Don't send response if request was aborted
+    }
+    
     if (err instanceof SyntaxError && 'body' in err) {
         console.error('\n❌ JSON Parse Error:', err.message);
-        return res.status(400).json({
-            success: false,
-            message: 'JSON không hợp lệ. Vui lòng kiểm tra request body.',
-            error: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        if (!res.headersSent) {
+            return res.status(400).json({
+                success: false,
+                message: 'JSON không hợp lệ. Vui lòng kiểm tra request body.',
+                error: process.env.NODE_ENV === 'development' ? err.message : undefined
+            });
+        }
     }
     next(err);
 });
 
-// MongoDB connection
-mongoose.connect('mongodb://127.0.0.1:27017/EduShareDB')
+// MongoDB connection - supports both local and cloud
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/EduShareDB';
+mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+})
     .then(() => {
         console.log('\n✅ ========== MONGODB CONNECTED ==========');
         console.log('Database: EduShareDB');
-        console.log('Collection: TaiLieu');
-        console.log('Connection: mongodb://127.0.0.1:27017/EduShareDB');
+        console.log('Collections:');
+        console.log('  - TaiLieu (Documents)');
+        console.log('  - UserCollection (Users)');
+        console.log('Connection:', MONGODB_URI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
         console.log('==========================================\n');
     })
     .catch(err => {
@@ -113,10 +140,21 @@ app.get('/', (req, res) => {
     });
 });
 
-// 404 handler
+// 404 handler - must be after all routes
 app.use((req, res) => {
     console.log(`\n⚠️ ========== 404 NOT FOUND ==========`);
-    console.log(`${req.method} ${req.path} - Route không tồn tại`);
+    console.log(`Method: ${req.method}`);
+    console.log(`Path: ${req.path}`);
+    console.log(`Original URL: ${req.originalUrl}`);
+    console.log(`Query:`, req.query);
+    console.log(`Params:`, req.params);
+    console.log('Available routes:');
+    console.log('  - POST /documents/upload');
+    console.log('  - GET /documents/search');
+    console.log('  - GET /documents');
+    console.log('  - POST /documents/:id/view');
+    console.log('  - POST /documents/:id/download');
+    console.log('  - GET /documents/:id');
     console.log('=====================================\n');
     
     res.status(404).json({
@@ -126,6 +164,8 @@ app.use((req, res) => {
             upload: 'POST /documents/upload',
             search: 'GET /documents/search',
             getAll: 'GET /documents',
+            incrementViews: 'POST /documents/:id/view',
+            incrementDownloads: 'POST /documents/:id/download',
             getById: 'GET /documents/:id',
             test: 'GET /test',
             root: 'GET /'

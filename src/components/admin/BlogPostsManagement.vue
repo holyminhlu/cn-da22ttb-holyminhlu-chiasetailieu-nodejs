@@ -1,5 +1,5 @@
 <template>
-  <div class="blog-posts-management">
+  <div class="blog-posts-management admin-page">
     <div class="section-header">
       <h2>Quản lý bài viết</h2>
       <div class="header-actions">
@@ -57,7 +57,7 @@
             />
             <label for="thumbnail-upload" class="thumbnail-upload-label">
               <div v-if="!postForm.thumbnailPreview" class="thumbnail-placeholder">
-                <span>📷 Chọn ảnh đại diện</span>
+                <span>Chọn ảnh đại diện</span>
                 <small>JPG, PNG (tối đa 5MB)</small>
               </div>
               <div v-else class="thumbnail-preview">
@@ -67,7 +67,7 @@
                   @click.stop="removeThumbnail"
                   class="btn-remove-thumbnail"
                 >
-                  ✕
+                  Xóa
                 </button>
               </div>
             </label>
@@ -89,7 +89,7 @@
                   class="btn-remove-block"
                   v-if="postForm.contentBlocks.length > 1"
                 >
-                  ✕
+                  Xóa
                 </button>
               </div>
               <textarea 
@@ -110,7 +110,7 @@
                     :id="`image-${index}`"
                   />
                   <label :for="`image-${index}`" class="image-upload-label">
-                    <span v-if="!block.imagePreview">📷 Chọn ảnh</span>
+                    <span v-if="!block.imagePreview">Chọn ảnh</span>
                     <img v-else :src="block.imagePreview" alt="Preview" class="image-preview" />
                   </label>
                   <button 
@@ -188,7 +188,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="post in posts" :key="post._id || post.id">
+          <tr v-for="post in posts" :key="post.blog_post_id || post.slug || post._id || post.id">
             <td>{{ post.title }}</td>
             <td>{{ post.category }}</td>
             <td>
@@ -200,7 +200,21 @@
             <td>{{ formatDate(post.publishedDate || post.createdAt) }}</td>
             <td>
               <button @click="editPost(post)" class="btn-action">Sửa</button>
-              <button @click="deletePost(post)" class="btn-action btn-delete">Xóa</button>
+              <button
+                v-if="post.status === 'archived'"
+                @click="restorePost(post)"
+                class="btn-action"
+              >
+                Khôi phục
+              </button>
+              <button
+                v-else
+                @click="deletePost(post)"
+                class="btn-action btn-delete"
+              >
+                Xóa
+              </button>
+              <button @click="deletePostPermanent(post)" class="btn-action btn-delete">Xóa vĩnh viễn</button>
             </td>
           </tr>
         </tbody>
@@ -214,7 +228,14 @@
 </template>
 
 <script>
-import { getAllBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost } from '@/utils/adminAPI.js'
+import {
+  getAllBlogPosts,
+  createBlogPost,
+  updateBlogPost,
+  deleteBlogPost,
+  restoreBlogPost,
+  deleteBlogPostPermanent
+} from '@/utils/adminAPI.js'
 
 export default {
   name: 'BlogPostsManagement',
@@ -255,7 +276,7 @@ export default {
       this.error = ''
       
       try {
-        const params = { limit: 100 }
+        const params = { limit: 100, status: 'all' }
         if (this.searchQuery) {
           params.search = this.searchQuery
         }
@@ -576,7 +597,7 @@ export default {
 
         let result
         if (this.editingPost) {
-          const postId = this.editingPost._id || this.editingPost.id || this.editingPost.blog_post_id
+          const postId = this.editingPost.blog_post_id || this.editingPost.slug || this.editingPost._id || this.editingPost.id
           result = await updateBlogPost(postId, postData)
         } else {
           result = await createBlogPost(postData)
@@ -614,12 +635,12 @@ export default {
       }
     },
     async deletePost(post) {
-      if (!confirm(`Bạn có chắc muốn xóa bài viết "${post.title}"?`)) {
+      if (!confirm(`Bạn có chắc muốn xóa mềm bài viết "${post.title}"?`)) {
         return
       }
 
       try {
-        const postId = post._id || post.id || post.blog_post_id
+        const postId = post.blog_post_id || post.slug || post._id || post.id
         const result = await deleteBlogPost(postId)
         
         if (result.success) {
@@ -630,6 +651,47 @@ export default {
       } catch (error) {
         console.error('Error deleting post:', error)
         alert('Có lỗi xảy ra khi xóa')
+      }
+    },
+
+    async restorePost(post) {
+      if (!confirm(`Bạn có chắc muốn khôi phục bài viết "${post.title}"?`)) {
+        return
+      }
+
+      try {
+        const postId = post.blog_post_id || post.slug || post._id || post.id
+        const result = await restoreBlogPost(postId)
+
+        if (result.success) {
+          this.loadPosts()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error restoring post:', error)
+        alert('Có lỗi xảy ra khi khôi phục')
+      }
+    },
+
+    async deletePostPermanent(post) {
+      const confirmed = confirm(
+        `Bạn có chắc muốn XÓA VĨNH VIỄN bài viết "${post.title}"?\n\nHành động này không thể hoàn tác.`
+      )
+      if (!confirmed) return
+
+      try {
+        const postId = post.blog_post_id || post.slug || post._id || post.id
+        const result = await deleteBlogPostPermanent(postId)
+
+        if (result.success) {
+          this.loadPosts()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error permanently deleting post:', error)
+        alert('Có lỗi xảy ra khi xóa vĩnh viễn')
       }
     },
     getStatusText(status) {

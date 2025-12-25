@@ -1,6 +1,6 @@
 <template>
   <article
-    :class="['document-card', { compact }]"
+    :class="['document-card', { compact, dense }]"
     role="article"
     :aria-label="document.title"
   >
@@ -19,7 +19,7 @@
           <polyline points="14 2 14 8 20 8"></polyline>
         </svg>
       </div>
-      <div class="card-overlay">
+      <div v-if="!compact" class="card-overlay">
         <div class="quick-actions">
           <button
             class="action-btn"
@@ -64,6 +64,36 @@
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
             </svg>
           </button>
+
+          <button
+            v-if="showManageActions"
+            class="action-btn"
+            type="button"
+            aria-label="Sửa tài liệu"
+            title="Sửa"
+            @click.stop="handleEdit"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+            </svg>
+          </button>
+          <button
+            v-if="showManageActions"
+            class="action-btn danger"
+            type="button"
+            aria-label="Xóa tài liệu"
+            title="Xóa"
+            @click.stop="handleDelete"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+          </button>
         </div>
       </div>
       <div v-if="fileType" class="file-type-badge">
@@ -72,9 +102,25 @@
     </div>
     
     <div class="card-content">
+      <div v-if="compact" class="compact-header">
+        <div class="compact-actions" role="group" aria-label="Thao tác tài liệu">
+          <button class="mini-btn" type="button" title="Xem trước" aria-label="Xem trước" @click.stop="handlePreview">Xem</button>
+          <button class="mini-btn" type="button" title="Tải xuống" aria-label="Tải xuống" @click.stop="handleDownload">Tải</button>
+          <button class="mini-btn" type="button" :title="isSaved ? 'Bỏ lưu' : 'Lưu'" :aria-label="isSaved ? 'Bỏ lưu' : 'Lưu'" @click.stop="toggleSave">
+            {{ isSaved ? 'Bỏ lưu' : 'Lưu' }}
+          </button>
+          <button v-if="showManageActions" class="mini-btn" type="button" title="Sửa" aria-label="Sửa" @click.stop="handleEdit">Sửa</button>
+          <button v-if="showManageActions" class="mini-btn danger" type="button" title="Xóa" aria-label="Xóa" @click.stop="handleDelete">Xóa</button>
+        </div>
+      </div>
+
       <h3 class="title">
         {{ document.title || 'Untitled' }}
       </h3>
+
+      <p v-if="compact && document.description" class="description">
+        {{ document.description }}
+      </p>
       
       <!-- Authors -->
       <div v-if="displayAuthors" class="author-info">
@@ -144,9 +190,17 @@ export default {
     compact: {
       type: Boolean,
       default: false
+    },
+    dense: {
+      type: Boolean,
+      default: false
+    },
+    showManageActions: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['preview', 'download', 'save'],
+  emits: ['preview', 'download', 'save', 'edit', 'delete'],
   setup(props, { emit }) {
     const isSaved = ref(false)
     
@@ -211,6 +265,14 @@ export default {
       console.log('🔖 Save event emitted:', { saved: isSaved.value })
     }
 
+    const handleEdit = () => {
+      emit('edit', props.document)
+    }
+
+    const handleDelete = () => {
+      emit('delete', props.document)
+    }
+
     const handleImageError = () => {
       imageError.value = true
     }
@@ -233,6 +295,8 @@ export default {
       handlePreview,
       handleDownload,
       toggleSave,
+      handleEdit,
+      handleDelete,
       handleImageError,
       formatNumber
     }
@@ -251,7 +315,7 @@ export default {
   display: flex;
   flex-direction: column;
   width: 100%; /* Fill wrapper width */
-  height: 480px; /* Fixed height for all cards */
+  height: 480px; /* Fixed height for grid cards */
   max-width: 100%; /* Fill the grid column */
 }
 
@@ -268,6 +332,13 @@ export default {
 
 .document-card.compact {
   flex-direction: row;
+  height: auto;
+  min-height: 140px;
+}
+
+/* Dense variant (used for Homepage cards): reduce vertical whitespace */
+.document-card.dense {
+  height: auto;
 }
 
 .card-image-wrapper {
@@ -283,6 +354,46 @@ export default {
   width: 120px;
   height: 120px; /* Fixed size for compact mode */
   flex-shrink: 0;
+}
+
+.compact-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.25rem;
+}
+
+.compact-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mini-btn {
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: white;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #0F172A;
+  transition: all 0.2s;
+}
+
+.mini-btn:hover {
+  border-color: rgba(29, 78, 216, 0.35);
+  color: #1d4ed8;
+}
+
+.mini-btn.danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.mini-btn.danger:hover {
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #b91c1c;
 }
 
 .thumbnail {
@@ -350,6 +461,12 @@ export default {
   box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
 }
 
+.action-btn.danger:hover {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 .action-btn:focus-visible {
   outline: 2px solid white;
   outline-offset: 2px;
@@ -377,6 +494,11 @@ export default {
   min-height: 0; /* Allow flex shrinking */
 }
 
+.document-card.dense .card-content {
+  padding: 0.625rem;
+  gap: 0.125rem;
+}
+
 .title {
   font-size: 1rem;
   font-weight: 600;
@@ -385,11 +507,36 @@ export default {
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2; /* Limit to 2 lines */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
   height: 2.8em; /* Fixed height for exactly 2 lines */
   flex-shrink: 0;
+}
+
+.document-card.dense .title {
+  height: auto;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+}
+
+.document-card.compact .title {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  height: auto;
+}
+
+.description {
+  margin: 0;
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .title-link {
@@ -412,6 +559,12 @@ export default {
   flex-shrink: 0;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.document-card.dense .author-info {
+  height: auto;
+  font-size: 0.8125rem;
+  gap: 0.375rem;
 }
 
 .author-label {
@@ -437,6 +590,12 @@ export default {
   overflow: hidden;
 }
 
+.document-card.dense .program-info {
+  height: auto;
+  font-size: 0.8125rem;
+  gap: 0.375rem;
+}
+
 .program-info svg {
   color: var(--color-primary);
   flex-shrink: 0;
@@ -458,6 +617,16 @@ export default {
   max-height: 64px; /* Limit tag area height */
   overflow: hidden; /* Hide overflowing tags */
   flex-shrink: 0;
+}
+
+.document-card.dense .tags {
+  min-height: 0;
+  gap: 0.375rem;
+  max-height: 56px;
+}
+
+.document-card.dense .tag {
+  padding: 0.2rem 0.6rem;
 }
 
 .tag {
@@ -486,6 +655,14 @@ export default {
   align-items: center;
 }
 
+.document-card.dense .card-meta {
+  margin-top: 0;
+  padding-top: 0.125rem;
+  height: auto;
+  font-size: 0.8125rem;
+  gap: 0.75rem;
+}
+
 .meta-item {
   display: flex;
   align-items: center;
@@ -505,6 +682,11 @@ export default {
   overflow: hidden;
   display: flex;
   align-items: center;
+}
+
+.document-card.dense .license-info {
+  padding-top: 0.125rem;
+  height: auto;
 }
 
 .license-badge {

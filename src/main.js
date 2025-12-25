@@ -8,6 +8,7 @@ import 'aos/dist/aos.css'; // Import CSS AOS
 import AOS from 'aos';     // Import thư viện JS
 import gsap from 'gsap';
 import './assets/styles/design-tokens.css'; // Design tokens
+import './assets/styles/admin-shell.css'; // Admin layout + neutral UI styles
 
 
 createApp(App).use(router).mount('#app')

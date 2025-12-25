@@ -146,9 +146,12 @@
                       :key="doc.id"
                       :document="doc"
                       :compact="viewMode === 'list'"
+                      :show-manage-actions="isOwner"
                       @preview="handlePreview"
                       @download="handleDownload"
                       @save="handleSave"
+                      @edit="openEditDocument"
+                      @delete="confirmDeleteDocument"
                     />
                   </div>
                   <div v-else class="empty-state">
@@ -245,6 +248,15 @@
       @cancel="showConfirmModal = false"
     />
 
+    <EditDocumentModal
+      :show="showEditDocumentModal"
+      :document="selectedDocument"
+      :programs="programs"
+      :saving="savingDocument"
+      @close="showEditDocumentModal = false"
+      @save="handleDocumentUpdate"
+    />
+
     <!-- Toast Notifications -->
     <Toast
       :show="toast.show"
@@ -278,6 +290,8 @@ import SecurityForm from '@/components/profile/SecurityForm.vue'
 import DocumentCard from '@/components/DocumentCard.vue'
 import ConfirmModal from '@/components/profile/ConfirmModal.vue'
 import Toast from '@/components/profile/Toast.vue'
+import EditDocumentModal from '@/components/profile/EditDocumentModal.vue'
+import documentsData from '@/data/documentsData.json'
 
 export default {
   name: 'UserProfileView',
@@ -292,7 +306,8 @@ export default {
     SecurityForm,
     DocumentCard,
     ConfirmModal,
-    Toast
+    Toast,
+    EditDocumentModal
   },
   setup() {
     const route = useRoute()
@@ -304,6 +319,9 @@ export default {
     const showAvatarUploader = ref(false)
     const showCoverUploader = ref(false)
     const showConfirmModal = ref(false)
+    const showEditDocumentModal = ref(false)
+    const savingDocument = ref(false)
+    const selectedDocument = ref(null)
     const documentFilter = ref('all')
     const documentSort = ref('newest')
     const viewMode = ref('grid')
@@ -334,6 +352,9 @@ export default {
     const bookmarks = ref([])
     const badges = ref([])
     const connectedAccounts = ref([])
+
+    // Same programs source as UploadModal (DocumentsView)
+    const programs = ref(documentsData.programs || [])
 
     const confirmModal = ref({
       title: '',
@@ -395,6 +416,63 @@ export default {
 
       return filtered
     })
+
+    const getEnvValue = (key, fallback = undefined) => {
+      if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, key)) {
+        return import.meta.env[key]
+      }
+      if (typeof process !== 'undefined' && process.env && Object.prototype.hasOwnProperty.call(process.env, key)) {
+        return process.env[key]
+      }
+      return fallback
+    }
+
+    const FILE_BASE_URL = getEnvValue('VITE_FILE_BASE_URL', 'http://localhost:3003')
+    const API_BASE_URL = getEnvValue('VITE_API_BASE_URL', 'http://localhost:3000')
+    const isExternalAsset = (url = '') => /^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')
+
+    const resolveThumbnailUrl = (doc = {}) => {
+      const candidate =
+        doc.thumbnail ||
+        doc.coverImage ||
+        doc.thumbnailUrl ||
+        ''
+
+      const rawUrl =
+        typeof candidate === 'object' && candidate !== null
+          ? (candidate.fileUrl || candidate.filePath || candidate.url || '')
+          : candidate
+
+      if (!rawUrl || typeof rawUrl !== 'string') return ''
+      if (isExternalAsset(rawUrl)) return rawUrl
+
+      // API commonly returns '/uploads/thumbnails/...'
+      if (rawUrl.startsWith('/')) {
+        return `${FILE_BASE_URL}${rawUrl}`
+      }
+
+      // Some responses may omit the leading slash: 'uploads/thumbnails/...'
+      if (rawUrl.startsWith('uploads/')) {
+        return `${FILE_BASE_URL}/${rawUrl}`
+      }
+
+      // Fallback: treat as thumbnail filename
+      return `${FILE_BASE_URL}/uploads/thumbnails/${rawUrl}`
+    }
+
+    const normalizeDocumentForCard = (doc = {}) => {
+      const normalized = {
+        ...doc,
+        // Ensure we always have a stable id for UI keys and downstream actions
+        id: doc?.id || doc?._id || doc?.document_id || '',
+        thumbnail: resolveThumbnailUrl(doc)
+      }
+      return normalized
+    }
+
+    const getDocumentId = (doc) => {
+      return doc?.document_id || doc?.id || doc?._id || ''
+    }
 
     // Methods
     const fetchUserProfile = async () => {
@@ -459,17 +537,17 @@ export default {
         console.log('Fetching documents for user:', uploaderId)
         
         // Call API to get user's documents
-        const response = await fetch(`http://localhost:3000/api/documents/search?uploaderId=${uploaderId}&limit=100&sortBy=newest`)
+        const response = await fetch(`${API_BASE_URL}/api/documents/search?uploaderId=${uploaderId}&limit=100&sortBy=newest`)
         const result = await response.json()
         
         console.log('Documents fetch result:', result)
         
         if (result.success && result.data) {
-          documents.value = result.data
+          documents.value = (Array.isArray(result.data) ? result.data : []).map(normalizeDocumentForCard)
           // Update stats with actual count
-          userProfile.value.stats.uploads = result.data.length
+          userProfile.value.stats.uploads = Array.isArray(result.data) ? result.data.length : 0
           // Calculate total downloads from all documents
-          const totalDownloads = result.data.reduce((sum, doc) => {
+          const totalDownloads = (Array.isArray(result.data) ? result.data : []).reduce((sum, doc) => {
             return sum + (doc.downloads || 0)
           }, 0)
           userProfile.value.stats.downloads = totalDownloads
@@ -495,7 +573,7 @@ export default {
         console.log('Fetching bookmarks for user:', userId)
         
         // Call API to get user's bookmarks
-        const response = await fetch(`http://localhost:3000/api/documents/bookmarks/${userId}`)
+        const response = await fetch(`${API_BASE_URL}/api/documents/bookmarks/${userId}`)
         
         if (!response.ok) {
           console.error('Failed to fetch bookmarks:', response.status, response.statusText)
@@ -508,31 +586,7 @@ export default {
         console.log('Bookmarks fetch result:', result)
         
         if (result.success && result.data && Array.isArray(result.data)) {
-          // Process bookmarks to ensure thumbnail URLs are correct
-          bookmarks.value = result.data.map(doc => {
-            // Handle thumbnail - can be string or object
-            if (doc.thumbnail) {
-              if (typeof doc.thumbnail === 'object' && doc.thumbnail.fileUrl) {
-                // If thumbnail is an object with fileUrl
-                const thumbUrl = doc.thumbnail.fileUrl
-                if (!thumbUrl.startsWith('http')) {
-                  doc.thumbnail = thumbUrl.startsWith('/') 
-                    ? `http://localhost:3003${thumbUrl}`
-                    : `http://localhost:3003/uploads/thumbnails/${thumbUrl}`
-                } else {
-                  doc.thumbnail = thumbUrl
-                }
-              } else if (typeof doc.thumbnail === 'string') {
-                // If thumbnail is a string
-                if (!doc.thumbnail.startsWith('http')) {
-                  doc.thumbnail = doc.thumbnail.startsWith('/')
-                    ? `http://localhost:3003${doc.thumbnail}`
-                    : `http://localhost:3003/uploads/thumbnails/${doc.thumbnail}`
-                }
-              }
-            }
-            return doc
-          })
+          bookmarks.value = result.data.map(normalizeDocumentForCard)
           // Update stats with actual count
           userProfile.value.stats.bookmarks = result.data.length
           console.log(`✅ Loaded ${result.data.length} bookmarks`)
@@ -625,6 +679,130 @@ export default {
     const handleDownload = (document) => {
       // TODO: Download document
       console.log('Download:', document)
+    }
+
+    const openEditDocument = async (document) => {
+      if (!isOwner.value) return
+
+      const docId = getDocumentId(document)
+      if (!docId) {
+        showToast('Không xác định được tài liệu để sửa', 'error')
+        return
+      }
+
+      // Open with current card data first (fast), then refresh with full DB data
+      selectedDocument.value = document
+      showEditDocumentModal.value = true
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(docId)}`)
+        const result = await response.json().catch(() => null)
+
+        if (response.ok && result?.success && result?.data) {
+          selectedDocument.value = normalizeDocumentForCard(result.data)
+          return
+        }
+
+        // Keep existing selectedDocument but let user know
+        showToast(result?.message || 'Không thể tải đầy đủ thông tin tài liệu', 'error')
+      } catch (error) {
+        console.error('Error fetching document details:', error)
+        showToast('Có lỗi xảy ra khi tải thông tin tài liệu', 'error')
+      }
+    }
+
+    const confirmDeleteDocument = (document) => {
+      if (!isOwner.value) return
+      const docId = getDocumentId(document)
+      if (!docId) {
+        showToast('Không xác định được tài liệu để xóa', 'error')
+        return
+      }
+
+      confirmModal.value = {
+        title: 'Xác nhận xóa tài liệu',
+        message: `Bạn có chắc chắn muốn xóa tài liệu "${document.title || ''}"?`,
+        type: 'danger',
+        onConfirm: async () => {
+          await handleDeleteDocument(document)
+          showConfirmModal.value = false
+        }
+      }
+      showConfirmModal.value = true
+    }
+
+    const handleDeleteDocument = async (document) => {
+      try {
+        const uploaderId = localStorage.getItem('userId')
+        const docId = getDocumentId(document)
+        if (!uploaderId || !docId) {
+          showToast('Bạn cần đăng nhập để xóa tài liệu', 'error')
+          return
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(docId)}?uploaderId=${encodeURIComponent(uploaderId)}`, {
+          method: 'DELETE'
+        })
+        const result = await response.json().catch(() => null)
+
+        if (response.ok && result?.success) {
+          showToast('Đã xóa tài liệu', 'success')
+          await fetchDocuments()
+          return
+        }
+
+        showToast(result?.message || 'Xóa tài liệu thất bại', 'error')
+      } catch (error) {
+        console.error('Error deleting document:', error)
+        showToast('Có lỗi xảy ra khi xóa tài liệu', 'error')
+      }
+    }
+
+    const handleDocumentUpdate = async (payload) => {
+      try {
+        const uploaderId = localStorage.getItem('userId')
+        const docId = getDocumentId(selectedDocument.value)
+        if (!uploaderId || !docId) {
+          showToast('Bạn cần đăng nhập để sửa tài liệu', 'error')
+          return
+        }
+
+        savingDocument.value = true
+
+        // Only allow updating specific fields
+        const allowedPayload = {
+          uploaderId,
+          title: payload.title,
+          description: payload.description,
+          program: payload.program,
+          courseCode: payload.courseCode,
+          year: payload.year,
+          languages: payload.languages,
+          visibility: payload.visibility
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(docId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(allowedPayload)
+        })
+
+        const result = await response.json().catch(() => null)
+        if (response.ok && result?.success) {
+          showToast('Đã cập nhật tài liệu', 'success')
+          showEditDocumentModal.value = false
+          selectedDocument.value = null
+          await fetchDocuments()
+          return
+        }
+
+        showToast(result?.message || 'Cập nhật tài liệu thất bại', 'error')
+      } catch (error) {
+        console.error('Error updating document:', error)
+        showToast('Có lỗi xảy ra khi cập nhật tài liệu', 'error')
+      } finally {
+        savingDocument.value = false
+      }
     }
 
     const handleSave = async (data) => {
@@ -764,6 +942,7 @@ export default {
       activeTab,
       userProfile,
       documents,
+      programs,
       bookmarks,
       badges,
       connectedAccounts,
@@ -778,6 +957,9 @@ export default {
       showAvatarUploader,
       showCoverUploader,
       showConfirmModal,
+      showEditDocumentModal,
+      savingDocument,
+      selectedDocument,
       confirmModal,
       toast,
       handleTabChange,
@@ -792,6 +974,9 @@ export default {
       handlePreview,
       handleDownload,
       handleSave,
+      openEditDocument,
+      confirmDeleteDocument,
+      handleDocumentUpdate,
       handleSettingsSave,
       handleSettingsCancel,
       handleChangePassword,

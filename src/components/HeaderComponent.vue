@@ -44,9 +44,6 @@
           </template>
           
           <template v-else>
-            <button class="btn-upload" @click="uploadDocument" title="Tải lên tài liệu">
-              📤
-            </button>
             <div class="user-profile-wrapper" ref="avatarWrapper">
               <button
                 class="user-profile-button"

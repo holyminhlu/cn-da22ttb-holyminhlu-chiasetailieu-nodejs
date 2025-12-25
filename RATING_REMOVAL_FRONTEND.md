@@ -82,3 +82,4 @@ grep -r "rating\|Rating" client/olf/src --exclude-dir=node_modules
 - `client/olf/src/components/FilterPanel.vue` - ✅ Fixed
 - `client/olf/src/components/StarRating.vue` - ✅ Deleted
 
+

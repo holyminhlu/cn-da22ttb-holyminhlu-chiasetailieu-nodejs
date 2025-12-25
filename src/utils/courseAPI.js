@@ -3,8 +3,8 @@ import axios from 'axios'
 // Use relative path to go through Vue proxy
 const API_BASE_URL = '/api/courses'
 
-// Payment API base – tạm thời gọi trực tiếp course-service để tránh lỗi proxy
-const PAYMENTS_BASE_URL = 'http://localhost:3004/payments'
+// Payment API base – always go through gateway (/api) so it works in Docker/nginx and avoids CORS
+const PAYMENTS_BASE_URL = '/api/payments'
 
 /**
  * Get all courses

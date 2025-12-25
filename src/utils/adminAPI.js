@@ -144,6 +144,40 @@ export async function deleteDocument(documentId) {
 }
 
 /**
+ * Restore soft-deleted document
+ */
+export async function restoreDocument(documentId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${documentId}/restore`, {
+      method: 'PATCH',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error restoring document:', error)
+    throw error
+  }
+}
+
+/**
+ * Permanently delete document (destructive)
+ */
+export async function deleteDocumentPermanent(documentId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${documentId}/permanent?force=true`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error permanently deleting document:', error)
+    throw error
+  }
+}
+
+/**
  * Update document
  */
 export async function updateDocument(documentId, documentData) {
@@ -193,6 +227,40 @@ export async function deleteCourse(courseId) {
     return result
   } catch (error) {
     console.error('Error deleting course:', error)
+    throw error
+  }
+}
+
+/**
+ * Restore soft-deleted course
+ */
+export async function restoreCourse(courseId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/restore`, {
+      method: 'PATCH',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error restoring course:', error)
+    throw error
+  }
+}
+
+/**
+ * Permanently delete course (destructive)
+ */
+export async function deleteCoursePermanent(courseId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/courses/${courseId}/permanent?force=true`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error permanently deleting course:', error)
     throw error
   }
 }
@@ -288,6 +356,40 @@ export async function deleteBlogPost(postId) {
 }
 
 /**
+ * Restore soft-deleted blog post (admin only)
+ */
+export async function restoreBlogPost(postId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/blogs/${postId}/restore`, {
+      method: 'PATCH',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error restoring blog post:', error)
+    throw error
+  }
+}
+
+/**
+ * Permanently delete blog post (destructive) (admin only)
+ */
+export async function deleteBlogPostPermanent(postId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/blogs/${postId}/permanent?force=true`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error permanently deleting blog post:', error)
+    throw error
+  }
+}
+
+/**
  * Get blog post by ID
  */
 export async function getBlogPostById(postId) {
@@ -371,6 +473,40 @@ export async function deleteForumPost(postId) {
     return result
   } catch (error) {
     console.error('Error deleting forum post:', error)
+    throw error
+  }
+}
+
+/**
+ * Restore soft-deleted forum post
+ */
+export async function restoreForumPost(postId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/forum/posts/${postId}/restore`, {
+      method: 'PATCH',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error restoring forum post:', error)
+    throw error
+  }
+}
+
+/**
+ * Permanently delete forum post (destructive)
+ */
+export async function deleteForumPostPermanent(postId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/forum/posts/${postId}/permanent?force=true`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error permanently deleting forum post:', error)
     throw error
   }
 }

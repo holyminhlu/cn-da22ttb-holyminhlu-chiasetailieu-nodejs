@@ -1,5 +1,5 @@
 <template>
-  <div class="courses-management">
+  <div class="courses-management admin-page">
     <div class="section-header">
       <h2>Quản lý khóa học</h2>
       <div class="search-box">
@@ -23,6 +23,7 @@
             <th>Giảng viên</th>
             <th>Học viên</th>
             <th>Giá</th>
+            <th>Trạng thái</th>
             <th>Ngày tạo</th>
             <th>Thao tác</th>
           </tr>
@@ -33,10 +34,30 @@
             <td>{{ course.instructor?.name || '-' }}</td>
             <td>{{ course.enrollmentCount || 0 }}</td>
             <td>{{ formatPrice(course.price) }}</td>
+            <td>
+              <span v-if="isSoftDeleted(course)" class="status-badge archived">Đã xóa mềm</span>
+              <span v-else class="status-badge active">Đang hoạt động</span>
+            </td>
             <td>{{ formatDate(course.createdAt) }}</td>
             <td>
               <button @click="viewCourse(course)" class="btn-action">Xem</button>
-              <button @click="deleteCourse(course)" class="btn-action btn-delete">Xóa</button>
+              <button
+                v-if="!isSoftDeleted(course)"
+                @click="deleteCourse(course)"
+                class="btn-action btn-delete"
+              >Xóa</button>
+
+              <button
+                v-else
+                @click="restoreCourse(course)"
+                class="btn-action"
+              >Khôi phục</button>
+
+              <button
+                v-if="isSoftDeleted(course)"
+                @click="deleteCoursePermanent(course)"
+                class="btn-action btn-delete"
+              >Xóa vĩnh viễn</button>
             </td>
           </tr>
         </tbody>
@@ -50,7 +71,7 @@
 </template>
 
 <script>
-import { getAllCourses, deleteCourse } from '@/utils/adminAPI.js'
+import { getAllCourses, deleteCourse, restoreCourse, deleteCoursePermanent } from '@/utils/adminAPI.js'
 
 export default {
   name: 'CoursesManagement',
@@ -71,7 +92,7 @@ export default {
       this.error = ''
       
       try {
-        const params = { limit: 100 }
+        const params = { limit: 100, status: 'all', visibility: 'all' }
         if (this.searchQuery) {
           params.search = this.searchQuery
         }
@@ -98,6 +119,9 @@ export default {
     viewCourse(course) {
       alert(`Thông tin khóa học:\n\nTiêu đề: ${course.title}\nGiảng viên: ${course.instructor?.name || '-'}\nHọc viên: ${course.enrollmentCount || 0}\nGiá: ${this.formatPrice(course.price)}`)
     },
+    isSoftDeleted(course) {
+      return course?.status === 'archived' || course?.visibility === 'private'
+    },
     async deleteCourse(course) {
       if (!confirm(`Bạn có chắc muốn xóa khóa học "${course.title}"?`)) {
         return
@@ -115,6 +139,46 @@ export default {
       } catch (error) {
         console.error('Error deleting course:', error)
         alert('Có lỗi xảy ra khi xóa')
+      }
+    },
+    async restoreCourse(course) {
+      if (!confirm(`Bạn có chắc muốn khôi phục khóa học "${course.title}"?`)) {
+        return
+      }
+
+      try {
+        const courseId = course._id || course.id || course.course_id
+        const result = await restoreCourse(courseId)
+
+        if (result.success) {
+          this.loadCourses()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error restoring course:', error)
+        alert('Có lỗi xảy ra khi khôi phục')
+      }
+    },
+    async deleteCoursePermanent(course) {
+      const confirm1 = confirm(`XÓA VĨNH VIỄN sẽ xóa khóa học và dữ liệu liên quan (enrollments/payments).\n\nBạn có chắc muốn xóa vĩnh viễn "${course.title}"?`)
+      if (!confirm1) return
+
+      const confirm2 = confirm('Thao tác này KHÔNG THỂ HOÀN TÁC. Nhấn OK để xác nhận lần nữa.')
+      if (!confirm2) return
+
+      try {
+        const courseId = course._id || course.id || course.course_id
+        const result = await deleteCoursePermanent(courseId)
+
+        if (result.success) {
+          this.loadCourses()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error permanently deleting course:', error)
+        alert('Có lỗi xảy ra khi xóa vĩnh viễn')
       }
     },
     formatDate(date) {
@@ -225,4 +289,5 @@ export default {
   color: #999;
 }
 </style>
+
 

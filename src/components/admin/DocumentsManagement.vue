@@ -1,5 +1,5 @@
 <template>
-  <div class="documents-management">
+  <div class="documents-management admin-page">
     <div class="section-header">
       <h2>Quản lý tài liệu</h2>
       <div class="search-box">
@@ -23,6 +23,7 @@
             <th>Tác giả</th>
             <th>Lượt tải</th>
             <th>Lượt xem</th>
+            <th>Trạng thái</th>
             <th>Ngày đăng</th>
             <th>Thao tác</th>
           </tr>
@@ -33,10 +34,30 @@
             <td>{{ doc.author?.name || '-' }}</td>
             <td>{{ doc.downloads || 0 }}</td>
             <td>{{ doc.views || 0 }}</td>
+            <td>
+              <span v-if="isSoftDeleted(doc)" class="status-badge archived">Đã xóa mềm</span>
+              <span v-else class="status-badge active">Đang hoạt động</span>
+            </td>
             <td>{{ formatDate(doc.uploadDate || doc.createdAt) }}</td>
             <td>
               <button @click="viewDocument(doc)" class="btn-action">Xem</button>
-              <button @click="deleteDocument(doc)" class="btn-action btn-delete">Xóa</button>
+              <button
+                v-if="!isSoftDeleted(doc)"
+                @click="deleteDocument(doc)"
+                class="btn-action btn-delete"
+              >Xóa</button>
+
+              <button
+                v-else
+                @click="restoreDocument(doc)"
+                class="btn-action"
+              >Khôi phục</button>
+
+              <button
+                v-if="isSoftDeleted(doc)"
+                @click="deleteDocumentPermanent(doc)"
+                class="btn-action btn-delete"
+              >Xóa vĩnh viễn</button>
             </td>
           </tr>
         </tbody>
@@ -50,7 +71,7 @@
 </template>
 
 <script>
-import { getAllDocuments, deleteDocument } from '@/utils/adminAPI.js'
+import { getAllDocuments, deleteDocument, restoreDocument, deleteDocumentPermanent } from '@/utils/adminAPI.js'
 
 export default {
   name: 'DocumentsManagement',
@@ -71,7 +92,7 @@ export default {
       this.error = ''
       
       try {
-        const params = { limit: 100 }
+        const params = { limit: 100, status: 'all', visibility: 'all' }
         if (this.searchQuery) {
           params.search = this.searchQuery
         }
@@ -98,6 +119,9 @@ export default {
     viewDocument(doc) {
       alert(`Thông tin tài liệu:\n\nTiêu đề: ${doc.title}\nTác giả: ${doc.author?.name || '-'}\nLượt tải: ${doc.downloads || 0}\nLượt xem: ${doc.views || 0}`)
     },
+    isSoftDeleted(doc) {
+      return doc?.status === 'archived' || doc?.visibility === 'private'
+    },
     async deleteDocument(doc) {
       if (!confirm(`Bạn có chắc muốn xóa tài liệu "${doc.title}"?`)) {
         return
@@ -115,6 +139,46 @@ export default {
       } catch (error) {
         console.error('Error deleting document:', error)
         alert('Có lỗi xảy ra khi xóa')
+      }
+    },
+    async restoreDocument(doc) {
+      if (!confirm(`Bạn có chắc muốn khôi phục tài liệu "${doc.title}"?`)) {
+        return
+      }
+
+      try {
+        const docId = doc._id || doc.id || doc.document_id
+        const result = await restoreDocument(docId)
+
+        if (result.success) {
+          this.loadDocuments()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error restoring document:', error)
+        alert('Có lỗi xảy ra khi khôi phục')
+      }
+    },
+    async deleteDocumentPermanent(doc) {
+      const confirm1 = confirm(`XÓA VĨNH VIỄN sẽ xóa tài liệu và file liên quan trên ổ đĩa.\n\nBạn có chắc muốn xóa vĩnh viễn "${doc.title}"?`)
+      if (!confirm1) return
+
+      const confirm2 = confirm('Thao tác này KHÔNG THỂ HOÀN TÁC. Nhấn OK để xác nhận lần nữa.')
+      if (!confirm2) return
+
+      try {
+        const docId = doc._id || doc.id || doc.document_id
+        const result = await deleteDocumentPermanent(docId)
+
+        if (result.success) {
+          this.loadDocuments()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error permanently deleting document:', error)
+        alert('Có lỗi xảy ra khi xóa vĩnh viễn')
       }
     },
     formatDate(date) {
@@ -218,4 +282,5 @@ export default {
   color: #999;
 }
 </style>
+
 

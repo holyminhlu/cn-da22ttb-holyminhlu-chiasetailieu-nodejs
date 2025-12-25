@@ -113,3 +113,4 @@ export async function searchPosts(query, params = {}) {
   }
 }
 
+

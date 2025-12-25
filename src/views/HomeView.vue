@@ -54,6 +54,7 @@
             <DocumentCard
               v-for="doc in searchResults"
               :key="doc.id"
+              dense
               :document="doc"
               @preview="handlePreview"
               @download="handleDownload"
@@ -93,19 +94,20 @@
         </div>
       </section>
 
-      <!-- Recommended Courses -->
+      <!-- Recommended Documents -->
       <section
-        v-if="!showSearchResults && recommendedCourses.length > 0"
+        v-if="!showSearchResults && recommendedDocuments.length > 0"
         class="section courses-section"
-        aria-label="Khóa học đề xuất"
+        aria-label="Tài liệu đề xuất"
       >
         <div class="container">
-          <h2 class="section-title">Khóa học đề xuất</h2>
+          <h2 class="section-title">Tài liệu đề xuất</h2>
           <div class="documents-grid">
             <DocumentCard
-              v-for="course in recommendedCourses"
-              :key="course.id"
-              :document="course"
+              v-for="doc in recommendedDocuments"
+              :key="doc.id"
+              dense
+              :document="doc"
               @preview="handlePreview"
               @download="handleDownload"
               @save="handleSave"
@@ -129,6 +131,7 @@
             <DocumentCard
               v-for="doc in latestDocuments"
               :key="doc.id"
+              dense
               :document="doc"
               @preview="handlePreview"
               @download="handleDownload"
@@ -143,14 +146,14 @@
 
       <!-- Popular by Category -->
       <section
-        v-if="!showSearchResults && popularByCategory.length > 0"
+        v-if="!showSearchResults && popularByProgram.length > 0"
         class="section popular-section"
         aria-label="Tài liệu phổ biến theo ngành"
       >
         <div class="container">
           <h2 class="section-title">Tài liệu phổ biến theo ngành</h2>
           <div
-            v-for="category in popularByCategory"
+            v-for="category in popularByProgram"
             :key="category.id"
             class="category-block"
           >
@@ -159,6 +162,7 @@
               <DocumentCard
                 v-for="doc in category.documents"
                 :key="doc.id"
+                dense
                 :document="doc"
                 @preview="handlePreview"
                 @download="handleDownload"
@@ -206,7 +210,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import HeroSection from '@/components/HeroSection.vue'
 import SearchBar from '@/components/SearchBar.vue'
@@ -247,6 +251,122 @@ export default {
     // Latest documents from API
     const latestDocuments = ref([])
     const loadingLatestDocuments = ref(false)
+
+    // Recommended documents (top downloads) from API
+    const recommendedDocuments = ref([])
+    const loadingRecommendedDocuments = ref(false)
+
+    // Popular documents grouped by program from API
+    const popularByProgram = ref([])
+    const loadingPopularByProgram = ref(false)
+
+    const normalizeProgramKey = (rawProgram) => {
+      if (!rawProgram) return ''
+      return rawProgram
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+    }
+
+    // Homepage categories (fixed). These are display-only and do not modify DB.
+    // Note: mapping "biology" is assumed to be "Sinh học" based on your example sentence.
+    // If you actually meant "chemistry" -> "Hóa học", tell me and I will adjust.
+    const homepageProgramCategories = [
+      {
+        key: 'cntt',
+        label: 'Công nghệ thông tin',
+        rawKeys: ['cntt', 'it', 'công nghệ thông tin', 'cong nghe thong tin']
+      },
+      {
+        key: 'hoa-hoc',
+        label: 'Hóa học',
+        rawKeys: ['hóa học', 'hoa hoc', 'chemistry', 'chemical']
+      },
+      {
+        key: 'kinh-doanh',
+        label: 'Kinh doanh',
+        rawKeys: ['kinh doanh', 'business']
+      },
+      {
+        key: 'kinh-te',
+        label: 'Kinh tế',
+        rawKeys: ['kinh tế', 'kinh te', 'econ', 'economics']
+      },
+      {
+        key: 'ky-thuat',
+        label: 'Kỹ thuật',
+        rawKeys: ['kỹ thuật', 'ky thuat', 'engineering']
+      },
+      {
+        key: 'sinh-hoc',
+        label: 'Sinh học',
+        rawKeys: ['sinh học', 'sinh hoc', 'biology']
+      },
+      {
+        key: 'toan',
+        label: 'Toán',
+        rawKeys: ['toán', 'toan', 'toán học', 'toan hoc', 'math', 'mathematics']
+      },
+      {
+        key: 'vat-ly',
+        label: 'Vật lý',
+        rawKeys: ['vật lý', 'vat ly', 'physics']
+      }
+    ]
+
+    const homepageCategoryByRawKey = new Map()
+    for (const category of homepageProgramCategories) {
+      for (const rawKey of category.rawKeys) {
+        homepageCategoryByRawKey.set(normalizeProgramKey(rawKey), category.key)
+      }
+    }
+
+    const getHomepageCategoryKey = (rawProgram) => {
+      const key = normalizeProgramKey(rawProgram)
+      if (!key) return ''
+      return homepageCategoryByRawKey.get(key) || ''
+    }
+
+    const getHomepageCategoryLabel = (rawProgram) => {
+      const categoryKey = getHomepageCategoryKey(rawProgram)
+      if (!categoryKey) return (rawProgram || '').toString().trim()
+      const category = homepageProgramCategories.find((c) => c.key === categoryKey)
+      return category ? category.label : (rawProgram || '').toString().trim()
+    }
+
+    const formatProgramLabel = (rawProgram) => {
+      if (!rawProgram) return ''
+      const trimmed = rawProgram.toString().trim()
+      if (!trimmed) return ''
+      return getHomepageCategoryLabel(trimmed)
+    }
+
+    const normalizeApiDocument = (doc) => {
+      const programRaw = (doc.program || '').toString().trim()
+      return {
+        id: doc.id || doc.document_id,
+        document_id: doc.document_id,
+        title: doc.title,
+        description: doc.description,
+        thumbnail: doc.thumbnail ? `http://localhost:3003${doc.thumbnail}` : null,
+        authors: doc.author ? [doc.author.name || doc.author] : ['N/A'],
+        author: doc.author ? (typeof doc.author === 'object' ? doc.author.name : doc.author) : 'N/A',
+        programRaw,
+        program: formatProgramLabel(programRaw),
+        courseCode: doc.courseCode || '',
+        year: doc.year || '',
+        tags: doc.tags || [],
+        downloads: doc.downloads || 0,
+        views: doc.views || 0,
+        rating: doc.rating || 0,
+        ratingCount: doc.ratingCount || 0,
+        fileType: doc.file?.fileType || 'PDF',
+        license: doc.license || '',
+        fileUrl: doc.file?.fileUrl ? `http://localhost:3003${doc.file.fileUrl}` : '',
+        uploadDate: doc.uploadDate || doc.createdAt || new Date().toISOString()
+      }
+    }
 
     // Fetch latest documents from API
     const fetchLatestDocuments = async () => {
@@ -336,36 +456,91 @@ export default {
       }
     }
 
-    // Computed sections
-    const recommendedCourses = computed(() => {
-      return allDocuments.value.filter(doc => doc.tags?.includes('CNTT')).slice(0, 6)
-    })
+    const fetchRecommendedDocuments = async () => {
+      loadingRecommendedDocuments.value = true
+      try {
+        const url = `/api/documents?limit=6&sortBy=downloads`
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
 
-    const popularByCategory = computed(() => {
-      const categories = {}
-      allDocuments.value.forEach(doc => {
-        doc.tags?.forEach(tag => {
-          if (!categories[tag]) {
-            categories[tag] = {
-              id: tag.toLowerCase(),
-              name: tag,
-              documents: []
-            }
-          }
-          categories[tag].documents.push(doc)
-        })
-      })
-
-      return Object.values(categories)
-        .map(cat => ({
-          ...cat,
-          documents: cat.documents
+        const result = await response.json()
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          recommendedDocuments.value = result.data.map(normalizeApiDocument)
+        } else {
+          recommendedDocuments.value = [...allDocuments.value]
             .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
-            .slice(0, 3)
-        }))
-        .filter(cat => cat.documents.length > 0)
-        .slice(0, 3)
-    })
+            .slice(0, 6)
+        }
+      } catch (error) {
+        console.error('❌ Error fetching recommended documents:', error)
+        recommendedDocuments.value = [...allDocuments.value]
+          .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+          .slice(0, 6)
+      } finally {
+        loadingRecommendedDocuments.value = false
+      }
+    }
+
+    const fetchPopularByProgram = async () => {
+      loadingPopularByProgram.value = true
+      try {
+        const url = `/api/documents?limit=200&sortBy=newest`
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const result = await response.json()
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          const normalizedDocs = result.data.map(normalizeApiDocument)
+
+          const groupsByCategoryKey = new Map()
+          for (const doc of normalizedDocs) {
+            const raw = (doc.programRaw || '').toString().trim()
+            if (!raw) continue
+            const categoryKey = getHomepageCategoryKey(raw)
+            if (!categoryKey) continue
+
+            if (!groupsByCategoryKey.has(categoryKey)) {
+              groupsByCategoryKey.set(categoryKey, [])
+            }
+            groupsByCategoryKey.get(categoryKey).push(doc)
+          }
+
+          const categoriesInOrder = homepageProgramCategories.map((category) => {
+            const docs = groupsByCategoryKey.get(category.key) || []
+            const sortedDocs = [...docs].sort((a, b) => {
+              const yearA = parseInt(a.year) || 0
+              const yearB = parseInt(b.year) || 0
+              if (yearB !== yearA) return yearB - yearA
+              const dateA = a.uploadDate ? new Date(a.uploadDate) : new Date(0)
+              const dateB = b.uploadDate ? new Date(b.uploadDate) : new Date(0)
+              return dateB - dateA
+            })
+
+            const maxYear = sortedDocs.reduce((acc, d) => Math.max(acc, parseInt(d.year) || 0), 0)
+
+            return {
+              id: category.key,
+              name: category.label,
+              maxYear,
+              documents: sortedDocs.slice(0, 6)
+            }
+          })
+
+          popularByProgram.value = categoriesInOrder
+        } else {
+          popularByProgram.value = []
+        }
+      } catch (error) {
+        console.error('❌ Error fetching popular documents by program:', error)
+        popularByProgram.value = []
+      } finally {
+        loadingPopularByProgram.value = false
+      }
+    }
 
     // Methods
     const handleSearch = async (query) => {
@@ -596,6 +771,10 @@ export default {
       // Fetch latest documents from API
       fetchLatestDocuments()
 
+      // Fetch homepage sections from API
+      fetchRecommendedDocuments()
+      fetchPopularByProgram()
+
       // Add structured data for SEO
       const structuredData = {
         '@context': 'https://schema.org',
@@ -628,11 +807,15 @@ export default {
       hasMoreResults,
       heroData,
       featuredCollections,
-      recommendedCourses,
+      recommendedDocuments,
+      loadingRecommendedDocuments,
       latestDocuments,
       loadingLatestDocuments,
-      popularByCategory,
+      popularByProgram,
+      loadingPopularByProgram,
       fetchLatestDocuments,
+      fetchRecommendedDocuments,
+      fetchPopularByProgram,
       handleSearch,
       handleFilterChange,
       clearSearch,

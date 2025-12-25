@@ -1,0 +1,290 @@
+/* Admin UI shell
+   Goals: clear hierarchy, efficient layout, low-contrast, no flashy effects.
+   This file intentionally scopes styles under .admin-shell to avoid impacting the public site.
+*/
+
+.admin-shell {
+  font-family: var(--font-family-base);
+  color: var(--color-neutral-900);
+  background: var(--color-light-bg);
+  min-height: 100vh;
+}
+
+.admin-shell * {
+  box-sizing: border-box;
+}
+
+/* Layout */
+.admin-shell__layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-shell__sidebar {
+  width: 280px;
+  background: #fff;
+  border-right: 1px solid var(--color-neutral-200);
+  padding: var(--spacing-6) var(--spacing-4);
+}
+
+.admin-shell__brand {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-900);
+  letter-spacing: 0.2px;
+  margin-bottom: var(--spacing-6);
+}
+
+.admin-shell__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.admin-shell__nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.admin-shell__nav-title {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-500);
+  margin-bottom: var(--spacing-2);
+}
+
+.admin-shell__nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-neutral-700);
+  font-size: var(--font-size-sm);
+}
+
+.admin-shell__nav-item:hover {
+  background: var(--color-neutral-50);
+}
+
+.admin-shell__nav-item:focus {
+  outline: 2px solid rgba(29, 78, 216, 0.25);
+  outline-offset: 2px;
+}
+
+.admin-shell__nav-item.is-active {
+  background: var(--color-primary-light);
+  border-color: rgba(29, 78, 216, 0.18);
+  color: var(--color-neutral-900);
+  font-weight: var(--font-weight-medium);
+}
+
+.admin-shell__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-shell__header {
+  background: #fff;
+  border-bottom: 1px solid var(--color-neutral-200);
+  padding: var(--spacing-4) var(--spacing-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.admin-shell__title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.admin-shell__subtitle {
+  margin-top: var(--spacing-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-600);
+}
+
+.admin-shell__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.admin-shell__user {
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-700);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-shell__content {
+  padding: var(--spacing-6);
+}
+
+.admin-shell__surface {
+  background: #fff;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-6);
+}
+
+/* Remove “flashy” transitions in admin */
+.admin-shell * {
+  transition: none !important;
+}
+
+/* Standard page wrapper for management components */
+.admin-shell .admin-page {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Standard header inside admin pages */
+.admin-shell .admin-page .section-header {
+  margin-bottom: var(--spacing-6) !important;
+}
+
+.admin-shell .admin-page .section-header h2 {
+  margin: 0 0 var(--spacing-3) 0 !important;
+  font-size: var(--font-size-lg) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  color: var(--color-neutral-900) !important;
+}
+
+/* Inputs */
+.admin-shell .admin-page .search-box {
+  max-width: 520px;
+}
+
+.admin-shell .admin-page .search-input,
+.admin-shell .admin-page .form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  background: #fff;
+}
+
+.admin-shell .admin-page .search-input:focus,
+.admin-shell .admin-page .form-control:focus {
+  outline: 2px solid rgba(29, 78, 216, 0.25);
+  outline-offset: 2px;
+  border-color: rgba(29, 78, 216, 0.35);
+}
+
+/* Tables */
+.admin-shell .admin-page .data-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 1px solid var(--color-neutral-200) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+}
+
+.admin-shell .admin-page .data-table th,
+.admin-shell .admin-page .data-table td {
+  padding: 12px 12px !important;
+  border-bottom: 1px solid var(--color-neutral-200) !important;
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-neutral-800) !important;
+  vertical-align: middle;
+}
+
+.admin-shell .admin-page .data-table th {
+  background: var(--color-neutral-50) !important;
+  color: var(--color-neutral-700) !important;
+  font-weight: var(--font-weight-medium) !important;
+}
+
+.admin-shell .admin-page .data-table tr:hover {
+  background: transparent !important;
+}
+
+/* Buttons */
+.admin-shell .admin-page .btn-action,
+.admin-shell .admin-shell__btn {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-neutral-300);
+  background: #fff;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-800);
+  cursor: pointer;
+}
+
+.admin-shell .admin-page .btn-action:hover,
+.admin-shell .admin-shell__btn:hover {
+  background: var(--color-neutral-50);
+}
+
+.admin-shell .admin-page .btn-delete {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: rgba(127, 29, 29, 0.95);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.admin-shell .admin-page .btn-delete:hover {
+  background: rgba(239, 68, 68, 0.09);
+}
+
+/* Status badges */
+.admin-shell .status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border: 1px solid var(--color-neutral-200);
+  color: var(--color-neutral-700);
+  background: var(--color-neutral-50);
+}
+
+.admin-shell .status-badge.published,
+.admin-shell .status-badge.active {
+  color: rgba(6, 95, 70, 0.95);
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+.admin-shell .status-badge.draft {
+  color: rgba(120, 53, 15, 0.95);
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.admin-shell .status-badge.archived,
+.admin-shell .status-badge.inactive {
+  color: rgba(55, 65, 81, 0.95);
+  background: rgba(107, 114, 128, 0.10);
+  border-color: rgba(107, 114, 128, 0.22);
+}
+
+/* Common message blocks */
+.admin-shell .admin-page .loading,
+.admin-shell .admin-page .empty-state {
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-600);
+}
+
+.admin-shell .admin-page .error {
+  font-size: var(--font-size-sm);
+  color: rgba(153, 27, 27, 0.95);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}

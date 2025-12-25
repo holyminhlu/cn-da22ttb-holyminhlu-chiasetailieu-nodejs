@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-login-container">
+  <div class="admin-shell admin-auth">
     <div class="login-box">
       <h2>Đăng nhập quản trị viên</h2>
       <form @submit.prevent="handleLogin">
@@ -92,20 +92,20 @@ export default {
 </script>
 
 <style scoped>
-.admin-login-container {
+.admin-auth {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f5f5f5;
-  padding: 20px;
+  background: var(--color-light-bg);
+  padding: var(--spacing-6);
 }
 
 .login-box {
-  background: white;
-  padding: 40px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: #fff;
+  padding: var(--spacing-10);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-200);
   width: 100%;
   max-width: 400px;
 }
@@ -113,9 +113,9 @@ export default {
 .login-box h2 {
   margin: 0 0 30px 0;
   text-align: center;
-  font-size: 24px;
-  font-weight: normal;
-  color: #333;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-900);
 }
 
 .form-group {
@@ -125,27 +125,28 @@ export default {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #333;
-  font-size: 14px;
+  color: var(--color-neutral-800);
+  font-size: var(--font-size-sm);
 }
 
 .form-control {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
   box-sizing: border-box;
 }
 
 .form-control:focus {
-  outline: none;
-  border-color: #666;
+  outline: 2px solid rgba(29, 78, 216, 0.25);
+  outline-offset: 2px;
+  border-color: rgba(29, 78, 216, 0.35);
 }
 
 .error-message {
-  color: #d32f2f;
-  font-size: 14px;
+  color: rgba(153, 27, 27, 0.95);
+  font-size: var(--font-size-sm);
   margin-bottom: 15px;
   text-align: center;
 }
@@ -153,21 +154,22 @@ export default {
 .btn-login {
   width: 100%;
   padding: 12px;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: 1px solid rgba(29, 78, 216, 0.35);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
   cursor: pointer;
 }
 
 .btn-login:hover:not(:disabled) {
-  background-color: #555;
+  background: var(--color-primary-hover);
 }
 
 .btn-login:disabled {
-  background-color: #999;
+  background: var(--color-neutral-400);
   cursor: not-allowed;
 }
 </style>
+
 

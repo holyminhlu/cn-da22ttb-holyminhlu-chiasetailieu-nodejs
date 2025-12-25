@@ -1,5 +1,5 @@
 <template>
-  <div class="users-management">
+  <div class="users-management admin-page">
     <div class="section-header">
       <h2>Quản lý tài khoản người dùng</h2>
       <div class="search-box">

@@ -1,52 +1,77 @@
 <template>
-  <div class="admin-dashboard">
-    <div class="dashboard-header">
-      <h1>Trang quản lý hệ thống</h1>
-      <button @click="handleLogout" class="btn-logout">Đăng xuất</button>
-    </div>
-    
-    <div class="dashboard-content">
-      <div class="sidebar">
-        <nav class="nav-menu">
-          <button 
-            @click="activeTab = 'users'" 
-            :class="['nav-item', { active: activeTab === 'users' }]"
-          >
-            Tài khoản người dùng
-          </button>
-          <button 
-            @click="activeTab = 'documents'" 
-            :class="['nav-item', { active: activeTab === 'documents' }]"
-          >
-            Tài liệu
-          </button>
-          <button 
-            @click="activeTab = 'courses'" 
-            :class="['nav-item', { active: activeTab === 'courses' }]"
-          >
-            Khóa học
-          </button>
-          <button 
-            @click="activeTab = 'posts'" 
-            :class="['nav-item', { active: activeTab === 'posts' }]"
-          >
-            Bài viết
-          </button>
-          <button 
-            @click="activeTab = 'forum'" 
-            :class="['nav-item', { active: activeTab === 'forum' }]"
-          >
-            Diễn đàn
-          </button>
+  <div class="admin-shell">
+    <div class="admin-shell__layout">
+      <aside class="admin-shell__sidebar">
+        <div class="admin-shell__brand">OpenLearnFoundation • Admin</div>
+
+        <nav class="admin-shell__nav" aria-label="Điều hướng quản trị">
+          <div class="admin-shell__nav-group">
+            <div class="admin-shell__nav-title">Người dùng</div>
+            <button
+              type="button"
+              @click="activeTab = 'users'"
+              :class="['admin-shell__nav-item', { 'is-active': activeTab === 'users' }]"
+            >
+              Tài khoản người dùng
+            </button>
+          </div>
+
+          <div class="admin-shell__nav-group">
+            <div class="admin-shell__nav-title">Nội dung</div>
+            <button
+              type="button"
+              @click="activeTab = 'documents'"
+              :class="['admin-shell__nav-item', { 'is-active': activeTab === 'documents' }]"
+            >
+              Tài liệu
+            </button>
+            <button
+              type="button"
+              @click="activeTab = 'courses'"
+              :class="['admin-shell__nav-item', { 'is-active': activeTab === 'courses' }]"
+            >
+              Khóa học
+            </button>
+            <button
+              type="button"
+              @click="activeTab = 'posts'"
+              :class="['admin-shell__nav-item', { 'is-active': activeTab === 'posts' }]"
+            >
+              Bài viết (Blog)
+            </button>
+            <button
+              type="button"
+              @click="activeTab = 'forum'"
+              :class="['admin-shell__nav-item', { 'is-active': activeTab === 'forum' }]"
+            >
+              Diễn đàn
+            </button>
+          </div>
         </nav>
-      </div>
-      
-      <div class="main-content">
-        <UsersManagement v-if="activeTab === 'users'" />
-        <DocumentsManagement v-if="activeTab === 'documents'" />
-        <CoursesManagement v-if="activeTab === 'courses'" />
-        <BlogPostsManagement v-if="activeTab === 'posts'" />
-        <ForumManagement v-if="activeTab === 'forum'" />
+      </aside>
+
+      <div class="admin-shell__main">
+        <header class="admin-shell__header">
+          <div>
+            <h1 class="admin-shell__title">{{ currentTitle }}</h1>
+            <div class="admin-shell__subtitle">{{ currentSubtitle }}</div>
+          </div>
+
+          <div class="admin-shell__header-actions">
+            <div class="admin-shell__user" v-if="adminIdentity">{{ adminIdentity }}</div>
+            <button type="button" @click="handleLogout" class="admin-shell__btn">Đăng xuất</button>
+          </div>
+        </header>
+
+        <main class="admin-shell__content" role="main">
+          <div class="admin-shell__surface">
+            <UsersManagement v-if="activeTab === 'users'" />
+            <DocumentsManagement v-if="activeTab === 'documents'" />
+            <CoursesManagement v-if="activeTab === 'courses'" />
+            <BlogPostsManagement v-if="activeTab === 'posts'" />
+            <ForumManagement v-if="activeTab === 'forum'" />
+          </div>
+        </main>
       </div>
     </div>
   </div>
@@ -73,6 +98,34 @@ export default {
       activeTab: 'users'
     }
   },
+  computed: {
+    currentTitle() {
+      const map = {
+        users: 'Quản lý tài khoản người dùng',
+        documents: 'Quản lý tài liệu',
+        courses: 'Quản lý khóa học',
+        posts: 'Quản lý bài viết Blog',
+        forum: 'Quản lý diễn đàn'
+      }
+      return map[this.activeTab] || 'Trang quản lý hệ thống'
+    },
+    currentSubtitle() {
+      const map = {
+        users: 'Khóa/mở khóa, xem thông tin người dùng.',
+        documents: 'Xóa mềm, khôi phục, xóa vĩnh viễn tài liệu.',
+        courses: 'Xóa mềm, khôi phục, xóa vĩnh viễn khóa học.',
+        posts: 'Tạo/sửa, xóa mềm, khôi phục, xóa vĩnh viễn bài Blog.',
+        forum: 'Xóa mềm, khôi phục, xóa vĩnh viễn bài viết diễn đàn.'
+      }
+      return map[this.activeTab] || 'Quản trị hệ thống.'
+    },
+    adminIdentity() {
+      const email = localStorage.getItem('userEmail')
+      const fullName = localStorage.getItem('userFullName')
+      if (fullName && email) return `${fullName} • ${email}`
+      return fullName || email || ''
+    }
+  },
   mounted() {
     // Kiểm tra quyền admin
     const token = localStorage.getItem('token')
@@ -97,84 +150,5 @@ export default {
 </script>
 
 <style scoped>
-.admin-dashboard {
-  min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.dashboard-header {
-  background: white;
-  padding: 20px 30px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dashboard-header h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: normal;
-  color: #333;
-}
-
-.btn-logout {
-  padding: 8px 16px;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-logout:hover {
-  background-color: #555;
-}
-
-.dashboard-content {
-  display: flex;
-  height: calc(100vh - 80px);
-}
-
-.sidebar {
-  width: 250px;
-  background: white;
-  border-right: 1px solid #ddd;
-  padding: 20px 0;
-}
-
-.nav-menu {
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-item {
-  padding: 15px 30px;
-  text-align: left;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-  border-left: 3px solid transparent;
-}
-
-.nav-item:hover {
-  background-color: #f5f5f5;
-}
-
-.nav-item.active {
-  background-color: #f5f5f5;
-  color: #333;
-  border-left-color: #333;
-  font-weight: 500;
-}
-
-.main-content {
-  flex: 1;
-  padding: 30px;
-  overflow-y: auto;
-}
 </style>
 

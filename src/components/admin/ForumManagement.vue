@@ -1,5 +1,5 @@
 <template>
-  <div class="forum-management">
+  <div class="forum-management admin-page">
     <div class="section-header">
       <h2>Quản lý diễn đàn</h2>
       <div class="search-box">
@@ -23,6 +23,7 @@
             <th>Người đăng</th>
             <th>Lượt thích</th>
             <th>Bình luận</th>
+            <th>Trạng thái</th>
             <th>Ngày đăng</th>
             <th>Thao tác</th>
           </tr>
@@ -33,10 +34,30 @@
             <td>{{ post.author?.name || post.user?.name || '-' }}</td>
             <td>{{ post.likes?.length || post.likesCount || 0 }}</td>
             <td>{{ post.comments?.length || post.commentsCount || 0 }}</td>
+            <td>
+              <span v-if="isSoftDeleted(post)" class="status-badge archived">Đã xóa mềm</span>
+              <span v-else class="status-badge active">Đang hoạt động</span>
+            </td>
             <td>{{ formatDate(post.createdAt || post.created_at) }}</td>
             <td>
               <button @click="viewPost(post)" class="btn-action">Xem</button>
-              <button @click="deletePost(post)" class="btn-action btn-delete">Xóa</button>
+              <button
+                v-if="!isSoftDeleted(post)"
+                @click="deletePost(post)"
+                class="btn-action btn-delete"
+              >Xóa</button>
+
+              <button
+                v-else
+                @click="restorePost(post)"
+                class="btn-action"
+              >Khôi phục</button>
+
+              <button
+                v-if="isSoftDeleted(post)"
+                @click="deletePostPermanent(post)"
+                class="btn-action btn-delete"
+              >Xóa vĩnh viễn</button>
             </td>
           </tr>
         </tbody>
@@ -50,7 +71,7 @@
 </template>
 
 <script>
-import { getAllForumPosts, deleteForumPost } from '@/utils/adminAPI.js'
+import { getAllForumPosts, deleteForumPost, restoreForumPost, deleteForumPostPermanent } from '@/utils/adminAPI.js'
 
 export default {
   name: 'ForumManagement',
@@ -71,7 +92,7 @@ export default {
       this.error = ''
       
       try {
-        const params = { limit: 100 }
+        const params = { limit: 100, includeDeleted: true }
         if (this.searchQuery) {
           params.search = this.searchQuery
         }
@@ -104,6 +125,9 @@ export default {
       
       alert(`Thông tin bài viết:\n\nTiêu đề: ${title}\nNgười đăng: ${author}\nLượt thích: ${likes}\nBình luận: ${comments}\n\nNội dung: ${content.substring(0, 200)}...`)
     },
+    isSoftDeleted(post) {
+      return post?.is_deleted === true
+    },
     async deletePost(post) {
       if (!confirm(`Bạn có chắc muốn xóa bài viết này?`)) {
         return
@@ -121,6 +145,46 @@ export default {
       } catch (error) {
         console.error('Error deleting forum post:', error)
         alert('Có lỗi xảy ra khi xóa')
+      }
+    },
+    async restorePost(post) {
+      if (!confirm('Bạn có chắc muốn khôi phục bài viết này?')) {
+        return
+      }
+
+      try {
+        const postId = post._id || post.id
+        const result = await restoreForumPost(postId)
+
+        if (result.success) {
+          this.loadPosts()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error restoring forum post:', error)
+        alert('Có lỗi xảy ra khi khôi phục')
+      }
+    },
+    async deletePostPermanent(post) {
+      const confirm1 = confirm('XÓA VĨNH VIỄN sẽ xóa bài viết và ảnh liên quan trên ổ đĩa. Bạn có chắc muốn tiếp tục?')
+      if (!confirm1) return
+
+      const confirm2 = confirm('Thao tác này KHÔNG THỂ HOÀN TÁC. Nhấn OK để xác nhận lần nữa.')
+      if (!confirm2) return
+
+      try {
+        const postId = post._id || post.id
+        const result = await deleteForumPostPermanent(postId)
+
+        if (result.success) {
+          this.loadPosts()
+        } else {
+          alert(result.message || 'Có lỗi xảy ra')
+        }
+      } catch (error) {
+        console.error('Error permanently deleting forum post:', error)
+        alert('Có lỗi xảy ra khi xóa vĩnh viễn')
       }
     },
     formatDate(date) {
@@ -224,4 +288,5 @@ export default {
   color: #999;
 }
 </style>
+
 

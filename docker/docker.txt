@@ -1,0 +1,27 @@
+TẮT DỰ ÁN AN TOÀN: docker-compose down
+BẬT LẠI: docker-compose up -d
+Xóa rác dockr,image, volume không chạy nữa:docker system prune -a --volumes
+
+## Dừng Dự Án
+```bash
+docker-compose stop
+```
+**Khởi động lại**:
+```bash
+docker-compose start
+```
+Nếu có chỉnh sửa code trong frontend:
+cd D:\DA_ChuyenNganhCNTT\OpenLearnFoundation\OpenLearnFoundation\OpenLearnFoundation
+docker-compose ps frontend
+docker-compose build frontend
+docker-compose up -d frontend
+Kiem tra trang thai: docker-compose ps frontend
+
+Nếu có chỉnh sửa code:
+VD: docker compose up -d --build frontend
+mới cập nhật code lên docker
+
+khởi động lại và nạp code: docker-compose up -d --build --force-recreate frontend
+
+minhlu@edu.com
+hfiuyfgysSD@1557

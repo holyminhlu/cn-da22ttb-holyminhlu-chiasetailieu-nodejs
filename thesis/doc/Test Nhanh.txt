@@ -1,0 +1,24 @@
+Giao diện: 
+- cd client
+- cd olf
+- npm run serve
+Chạy MongoDb
+Khởi chạy các server
+-  cd server
+	+ cd api-gateway
+	+ cd auth-service
+	+ cd course-service
+	+ cd document-service
+- npm start
+
+Test Login/Register
+MK: hF@vsbhefgbo1245
+
+Ve bang thuc the, luong nguio dung
+moi ket hop, chieu qua database nao
+lop hoc lma dc lam ko lm dc thi thoi.
+cloude luu tru
+file nang qua thi link duong dan drive
+doi co ban thanh tu khac de hieu
+Hien thong bao truong chua dien
+sua hien thi video khoa hoc
